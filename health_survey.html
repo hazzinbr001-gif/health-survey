@@ -1498,7 +1498,13 @@ function showBlockedModal(title, body, btn){
   m.querySelector('.modal-title').textContent=title;
   m.querySelector('.modal-body').textContent=body;
   const btns=m.querySelector('.modal-btns');
-  btns.innerHTML=`<button class="mbtn mbtn-s" onclick="closeFinish();newRec()">Start New Record</button>`;
+  btns.innerHTML=`
+    <button class="mbtn mbtn-s" onclick="closeFinish()" style="background:#1e5c38;color:#fff;border:none">
+      ← Go Back &amp; Change Answer
+    </button>
+    <button class="mbtn mbtn-s" onclick="closeFinish();newRec()" style="margin-top:4px">
+      Start New Record
+    </button>`;
   m.classList.add('open');
 }
 
