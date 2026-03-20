@@ -125,127 +125,181 @@ table.dt select{width:100%;padding:4px 3px;border:1px solid var(--border);border
 /* ══ WELCOME SCREEN ══════════════════════════════════ */
 #welcome-screen{
   position:fixed;inset:0;z-index:9999;
-  background:var(--green);
   display:flex;flex-direction:column;
   align-items:center;justify-content:center;
   padding:32px 24px;
   overflow:hidden;
+  /* animated gradient background */
+  background:linear-gradient(135deg,#0d3320 0%,#1e5c38 35%,#1a4f6e 70%,#0d2233 100%);
+  background-size:400% 400%;
+  animation:bgShift 8s ease infinite;
+}
+@keyframes bgShift{
+  0%  {background-position:0% 50%;}
+  25% {background-position:100% 0%;}
+  50% {background-position:100% 100%;}
+  75% {background-position:0% 100%;}
+  100%{background-position:0% 50%;}
 }
 #welcome-screen.hiding{
-  animation:welcomeFadeOut 0.7s ease forwards;
+  animation:welcomeFadeOut 0.65s ease forwards;
 }
 @keyframes welcomeFadeOut{
-  0%{opacity:1;transform:scale(1);}
-  100%{opacity:0;transform:scale(1.04);}
+  0%  {opacity:1;transform:scale(1);}
+  100%{opacity:0;transform:scale(1.05);}
 }
-/* background decorative circles */
-.wc-circle1{
-  position:absolute;top:-80px;right:-80px;
-  width:260px;height:260px;border-radius:50%;
-  background:rgba(255,255,255,.05);
+
+/* floating orbs */
+.wc-orb{
+  position:absolute;border-radius:50%;
+  filter:blur(40px);
+  animation:orbFloat linear infinite;
+  pointer-events:none;
 }
-.wc-circle2{
-  position:absolute;bottom:-100px;left:-60px;
-  width:300px;height:300px;border-radius:50%;
-  background:rgba(255,255,255,.04);
+.wc-orb1{width:220px;height:220px;background:rgba(76,175,114,.18);top:-60px;right:-60px;animation-duration:12s;animation-delay:0s;}
+.wc-orb2{width:180px;height:180px;background:rgba(26,95,110,.25);bottom:-40px;left:-40px;animation-duration:10s;animation-delay:-3s;}
+.wc-orb3{width:120px;height:120px;background:rgba(255,255,255,.06);top:42%;left:-20px;animation-duration:14s;animation-delay:-6s;}
+.wc-orb4{width:90px;height:90px;background:rgba(168,216,184,.12);bottom:25%;right:10px;animation-duration:9s;animation-delay:-2s;}
+@keyframes orbFloat{
+  0%  {transform:translate(0,0) scale(1);}
+  25% {transform:translate(15px,-20px) scale(1.05);}
+  50% {transform:translate(-10px,-35px) scale(0.95);}
+  75% {transform:translate(-20px,-10px) scale(1.08);}
+  100%{transform:translate(0,0) scale(1);}
 }
-.wc-circle3{
-  position:absolute;top:40%;left:-40px;
-  width:120px;height:120px;border-radius:50%;
-  background:rgba(76,175,114,.15);
+
+/* shimmer particles */
+.wc-particles{position:absolute;inset:0;overflow:hidden;pointer-events:none;}
+.wc-particle{
+  position:absolute;width:2px;height:2px;border-radius:50%;
+  background:rgba(255,255,255,.4);
+  animation:particleRise linear infinite;
 }
-/* logo pulse */
+@keyframes particleRise{
+  0%  {transform:translateY(100vh) scale(0);opacity:0;}
+  10% {opacity:1;}
+  90% {opacity:.3;}
+  100%{transform:translateY(-20px) scale(1);opacity:0;}
+}
+
+/* logo */
 @keyframes logoPulse{
-  0%{transform:scale(1);}
-  50%{transform:scale(1.08);}
-  100%{transform:scale(1);}
+  0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(76,175,114,0);}
+  50%    {transform:scale(1.07);box-shadow:0 0 0 16px rgba(76,175,114,.12);}
 }
 .wc-logo{
-  width:88px;height:88px;border-radius:24px;
-  background:rgba(255,255,255,.12);
+  width:92px;height:92px;border-radius:26px;
+  background:rgba(255,255,255,.1);
   display:flex;align-items:center;justify-content:center;
-  font-size:44px;margin-bottom:20px;
-  animation:logoPulse 2.5s ease infinite;
-  border:2px solid rgba(255,255,255,.18);
-  backdrop-filter:blur(4px);
+  font-size:46px;margin-bottom:18px;
+  animation:logoPulse 3s ease infinite;
+  border:1.5px solid rgba(255,255,255,.2);
+  backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
+  position:relative;z-index:1;
+}
+/* glass card wrapper */
+.wc-glass{
+  background:rgba(255,255,255,.07);
+  border:1px solid rgba(255,255,255,.14);
+  border-radius:24px;
+  padding:24px 28px 20px;
+  text-align:center;
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+  max-width:320px;width:100%;
+  position:relative;z-index:1;
+  margin-bottom:20px;
+  box-shadow:0 8px 40px rgba(0,0,0,.25);
 }
 .wc-greeting{
-  color:rgba(255,255,255,.7);
-  font-size:0.85rem;font-weight:600;
-  letter-spacing:1.5px;text-transform:uppercase;
-  margin-bottom:6px;
+  color:rgba(255,255,255,.65);
+  font-size:0.82rem;font-weight:600;
+  letter-spacing:1.8px;text-transform:uppercase;
+  margin-bottom:5px;
 }
 .wc-title{
-  color:#fff;font-size:1.6rem;font-weight:700;
-  text-align:center;line-height:1.25;margin-bottom:6px;
+  color:#fff;font-size:1.55rem;font-weight:700;
+  line-height:1.2;margin-bottom:5px;
+  text-shadow:0 2px 12px rgba(0,0,0,.3);
 }
 .wc-subtitle{
-  color:rgba(255,255,255,.6);font-size:0.85rem;
-  text-align:center;line-height:1.5;margin-bottom:32px;
+  color:rgba(255,255,255,.55);font-size:0.8rem;
+  line-height:1.55;
 }
-/* animated dots loader */
+/* name setup inside glass */
+#wc-name-setup{display:none;margin-top:14px;}
+#wc-name-input{
+  width:100%;padding:11px 14px;
+  background:rgba(255,255,255,.12);
+  border:1.5px solid rgba(255,255,255,.25);
+  border-radius:10px;color:#fff;
+  font-family:inherit;font-size:0.92rem;
+  text-align:center;outline:none;
+  margin-bottom:8px;
+}
+#wc-name-input::placeholder{color:rgba(255,255,255,.4);}
+#wc-name-input:focus{border-color:rgba(76,175,114,.7);background:rgba(255,255,255,.18);}
+.wc-save-btn{
+  width:100%;padding:11px;
+  background:rgba(76,175,114,.3);
+  border:1.5px solid rgba(76,175,114,.5);
+  border-radius:10px;color:#fff;
+  font-family:inherit;font-size:0.88rem;font-weight:600;
+  cursor:pointer;transition:all .2s;
+}
+.wc-save-btn:active{background:rgba(76,175,114,.5);}
+
+/* dots */
 @keyframes dotBounce{
-  0%,80%,100%{transform:translateY(0);}
-  40%{transform:translateY(-8px);}
+  0%,80%,100%{transform:translateY(0);opacity:.5;}
+  40%{transform:translateY(-9px);opacity:1;}
 }
-.wc-dots{display:flex;gap:7px;margin-bottom:32px;}
-.wc-dot{
-  width:8px;height:8px;border-radius:50%;
-  background:rgba(255,255,255,.5);
-  animation:dotBounce 1.4s infinite ease;
-}
+.wc-dots{display:flex;gap:8px;margin-bottom:24px;position:relative;z-index:1;}
+.wc-dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.5);animation:dotBounce 1.4s infinite ease;}
 .wc-dot:nth-child(2){animation-delay:.18s;}
 .wc-dot:nth-child(3){animation-delay:.36s;}
-/* divider */
-.wc-divider{
-  width:40px;height:2px;
-  background:rgba(255,255,255,.2);
-  border-radius:99px;margin:0 auto 20px;
-}
-/* credit card */
-.wc-credit{
-  position:absolute;bottom:0;left:0;right:0;
-  background:rgba(0,0,0,.25);
-  padding:14px 20px calc(14px + env(safe-area-inset-bottom));
-  text-align:center;
-}
-.wc-built{
-  color:rgba(255,255,255,.5);font-size:0.72rem;
-  letter-spacing:.3px;margin-bottom:4px;
-}
-.wc-built strong{color:rgba(255,255,255,.85);}
-.wc-tagline{
-  color:rgba(255,255,255,.4);font-size:0.68rem;
-  font-style:italic;margin-bottom:8px;
-}
-.wc-donate{
-  display:inline-flex;align-items:center;gap:6px;
-  background:rgba(255,255,255,.1);
-  border:1px solid rgba(255,255,255,.2);
-  border-radius:99px;padding:6px 14px;
-  color:rgba(255,255,255,.75);font-size:0.72rem;font-weight:600;
-  cursor:pointer;transition:all .2s;
-  text-decoration:none;
-}
-.wc-donate:active{background:rgba(255,255,255,.2);}
-.wc-donate-icon{font-size:14px;}
+
 /* enter button */
+@keyframes enterGlow{
+  0%,100%{box-shadow:0 6px 28px rgba(0,0,0,.25),0 0 0 0 rgba(76,175,114,0);}
+  50%    {box-shadow:0 10px 40px rgba(0,0,0,.3),0 0 0 10px rgba(76,175,114,.15);}
+}
 .wc-enter{
-  background:#fff;color:var(--green);
+  background:#fff;color:#1e5c38;
   border:none;border-radius:14px;
-  padding:16px 40px;
-  font-family:inherit;font-size:1rem;font-weight:700;
-  cursor:pointer;letter-spacing:.3px;
-  box-shadow:0 8px 32px rgba(0,0,0,.2);
-  transition:all .18s;
+  padding:15px 44px;
+  font-family:inherit;font-size:0.98rem;font-weight:700;
+  cursor:pointer;letter-spacing:.2px;
+  animation:enterGlow 2.5s ease infinite;
+  position:relative;z-index:1;
   display:flex;align-items:center;gap:8px;
 }
 .wc-enter:active{transform:scale(0.97);}
-@keyframes enterPulse{
-  0%,100%{box-shadow:0 8px 32px rgba(0,0,0,.2);}
-  50%{box-shadow:0 8px 48px rgba(255,255,255,.25);}
+/* enter arrow bounce */
+@keyframes arrowRight{0%,100%{transform:translateX(0);}50%{transform:translateX(4px);}}
+.wc-arrow{display:inline-block;animation:arrowRight 1.2s ease infinite;}
+
+/* footer */
+.wc-credit{
+  position:absolute;bottom:0;left:0;right:0;
+  background:rgba(0,0,0,.3);
+  backdrop-filter:blur(8px);
+  padding:12px 20px calc(12px + env(safe-area-inset-bottom));
+  text-align:center;z-index:1;
 }
-.wc-enter{animation:enterPulse 2.8s ease infinite;}
+.wc-built{color:rgba(255,255,255,.45);font-size:0.7rem;letter-spacing:.3px;margin-bottom:3px;}
+.wc-built strong{color:rgba(255,255,255,.8);}
+.wc-tagline{color:rgba(255,255,255,.35);font-size:0.65rem;font-style:italic;margin-bottom:7px;}
+.wc-donate{
+  display:inline-flex;align-items:center;gap:5px;
+  background:rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.18);
+  border-radius:99px;padding:5px 13px;
+  color:rgba(255,255,255,.65);font-size:0.7rem;font-weight:600;
+  cursor:pointer;transition:all .2s;
+}
+.wc-donate:active{background:rgba(255,255,255,.18);}
 /* ══ END WELCOME ══════════════════════════════════════ */
 
 @media print{
@@ -262,41 +316,53 @@ table.dt select{width:100%;padding:4px 3px;border:1px solid var(--border);border
 <body>
 
 <!-- ═══════════════════════════════════════════════════ -->
-<!--  WELCOME SCREEN                                    -->
+<!--  WELCOME SCREEN — Premium                          -->
 <!-- ═══════════════════════════════════════════════════ -->
 <div id="welcome-screen">
-  <!-- Decorative circles -->
-  <div class="wc-circle1"></div>
-  <div class="wc-circle2"></div>
-  <div class="wc-circle3"></div>
+
+  <!-- Animated floating orbs -->
+  <div class="wc-orb wc-orb1"></div>
+  <div class="wc-orb wc-orb2"></div>
+  <div class="wc-orb wc-orb3"></div>
+  <div class="wc-orb wc-orb4"></div>
+
+  <!-- Rising particles (injected by JS) -->
+  <div class="wc-particles" id="wc-particles"></div>
 
   <!-- Logo -->
   <div class="wc-logo">🏥</div>
 
-  <!-- Greeting + title -->
-  <div class="wc-greeting" id="wc-greeting">Good Morning</div>
-  <div class="wc-title">Community Health<br>Survey</div>
-  <div class="wc-subtitle">Situation Analysis &amp; Data Collection Tool<br>Serving communities, one record at a time.</div>
+  <!-- Glass card -->
+  <div class="wc-glass">
+    <div class="wc-greeting" id="wc-greeting">Good Morning</div>
+    <div class="wc-title" id="wc-name-title">Community Health<br>Survey</div>
+    <div class="wc-subtitle" id="wc-subtitle">Great Lakes University · Nyamache Sub County<br>Situation Analysis Tool</div>
 
-  <!-- Loading dots while app initialises -->
+    <!-- Name setup (first time only) -->
+    <div id="wc-name-setup">
+      <input id="wc-name-input" type="text" placeholder="Your first name..." autocomplete="given-name">
+      <button class="wc-save-btn" onclick="saveUserName()">Continue →</button>
+    </div>
+  </div>
+
+  <!-- Loading dots -->
   <div class="wc-dots" id="wc-dots">
     <div class="wc-dot"></div>
     <div class="wc-dot"></div>
     <div class="wc-dot"></div>
   </div>
 
-  <!-- Enter button (shown after 1.8s) -->
+  <!-- Enter button -->
   <button class="wc-enter" id="wc-enter" style="display:none" onclick="enterApp()">
-    Begin Interview →
+    Begin Interview <span class="wc-arrow">→</span>
   </button>
 
-  <!-- Footer credit + donate -->
+  <!-- Footer -->
   <div class="wc-credit">
     <div class="wc-built">Built by <strong>HazzinBR</strong></div>
     <div class="wc-tagline">For convenience and affordability in community health data collection</div>
     <a class="wc-donate" onclick="showDonateModal()">
-      <span class="wc-donate-icon">💚</span>
-      Support this project — M-Pesa 0112973866
+      💚 Support this project — M-Pesa 0112973866
     </a>
   </div>
 </div>
@@ -334,6 +400,7 @@ table.dt select{width:100%;padding:4px 3px;border:1px solid var(--border);border
   </div>
   <div style="display:flex;gap:7px;align-items:center">
     <button class="tb-rec" onclick="showInstallGuide()" style="background:rgba(255,255,255,.15);padding:8px 10px" title="Install app">📲</button>
+    <button class="tb-rec" onclick="showSyncSetup()" style="background:rgba(255,255,255,.15);padding:8px 10px" title="Sync settings">☁</button>
     <button class="tb-rec" onclick="openDrawer()">☰ Records</button>
   </div>
 </div>
@@ -362,13 +429,15 @@ table.dt select{width:100%;padding:4px 3px;border:1px solid var(--border);border
 </div>
 
 <div class="modal-ov" id="finModal">
-  <div class="modal">
+  <div class="modal" style="max-width:380px">
     <div class="modal-icon">🎉</div>
     <div class="modal-title">Interview Complete!</div>
-    <div class="modal-body">All sections saved. Would you like to print or export this record as a PDF now?</div>
-    <div class="modal-btns">
-      <button class="mbtn mbtn-p" onclick="doPrint()">🖨 Print / Save as PDF</button>
-      <button class="mbtn mbtn-s" onclick="closeFinish()">Not Now</button>
+    <div class="modal-body">Choose how to export this record:</div>
+    <div class="modal-btns" id="fin-btns">
+      <button class="mbtn mbtn-p" onclick="openBriefReport()" style="background:#1e5c38">📋 Brief Report<span style="font-size:0.72rem;opacity:.75;display:block;font-weight:400;margin-top:1px">Summary · Key findings · Red flags</span></button>
+      <button class="mbtn mbtn-p" onclick="openFullReport()" style="background:#1a4f6e">📄 Full Report<span style="font-size:0.72rem;opacity:.75;display:block;font-weight:400;margin-top:1px">All answers — complete questionnaire</span></button>
+      <button class="mbtn mbtn-p" onclick="exportJSON()" style="background:#4d5a27">💾 Save to Database<span style="font-size:0.72rem;opacity:.75;display:block;font-weight:400;margin-top:1px">Export raw data as JSON file</span></button>
+      <button class="mbtn mbtn-s" onclick="closeFinish()">Later</button>
     </div>
   </div>
 </div>
@@ -474,6 +543,7 @@ function runAllRules(){
   ruleCircumcisionGender();
   ruleDeathCauseAutoSuggest();
   ruleIllnessTreatmentChain();
+  ruleHIVHeard();
   updateIntegrityScore();
 }
 
@@ -977,6 +1047,20 @@ function ruleBreastfeed(){
   }
 }
 
+// ── RULE: If never heard of HIV, skip information source question ──
+function ruleHIVHeard(){
+  const heard = gvRadio('f_heard');
+  const infoGrp = document.querySelector('[name="f_info"]')?.closest('.form-group');
+  const noteEl = document.getElementById('hiv_no_note');
+  if(heard === 'No'){
+    if(infoGrp){ infoGrp.style.opacity='0.35'; infoGrp.style.pointerEvents='none'; }
+    if(noteEl) noteEl.style.display='block';
+  } else {
+    if(infoGrp){ infoGrp.style.opacity='1'; infoGrp.style.pointerEvents=''; }
+    if(noteEl) noteEl.style.display='none';
+  }
+}
+
 // ── RULE: HIV treatment only if family member positive ──
 function ruleHIVFamily(){
   const pos=gvRadio('f_fam_hiv');
@@ -1190,12 +1274,325 @@ function showFinish(){
   const m=document.getElementById('finModal');
   m.querySelector('.modal-icon').textContent='🎉';
   m.querySelector('.modal-title').textContent='Interview Complete!';
-  m.querySelector('.modal-body').textContent='All sections saved. Would you like to print or export this record as a PDF now?';
-  m.querySelector('.modal-btns').innerHTML=`<button class="mbtn mbtn-p" onclick="doPrint()">🖨 Print / Save as PDF</button><button class="mbtn mbtn-s" onclick="closeFinish()">Not Now</button>`;
+  m.querySelector('.modal-body').textContent='Choose how to export this record:';
+  m.querySelector('.modal-btns').innerHTML=`
+    <button class="mbtn mbtn-p" onclick="openBriefReport()" style="background:#1e5c38">
+      📋 Brief Report <span style="font-size:0.72rem;opacity:.75;display:block;font-weight:400;margin-top:2px">Summary · Key findings · Red flags</span>
+    </button>
+    <button class="mbtn mbtn-p" onclick="openFullReport()" style="background:#1a4f6e">
+      📄 Full Report <span style="font-size:0.72rem;opacity:.75;display:block;font-weight:400;margin-top:2px">Complete questionnaire answers</span>
+    </button>
+    <button class="mbtn mbtn-p" onclick="exportJSON()" style="background:#4d5a27">
+      💾 Save to Database <span style="font-size:0.72rem;opacity:.75;display:block;font-weight:400;margin-top:2px">Export raw data as JSON file</span>
+    </button>
+    <button class="mbtn mbtn-s" onclick="closeFinish()">Later</button>`;
   m.classList.add('open');
 }
 function closeFinish(){document.getElementById('finModal').classList.remove('open');}
-function doPrint(){closeFinish();setTimeout(()=>{document.querySelectorAll('.sec-card').forEach(e=>e.style.display='block');window.print();setTimeout(()=>document.querySelectorAll('.sec-card').forEach((e,i)=>e.style.display=i===cur?'block':'none'),700);},200);}
+
+function openBriefReport(){
+  closeFinish();
+  const rec = cRec();
+  const html = buildBriefReport(rec);
+  openReportWindow(html,'brief');
+}
+function openFullReport(){
+  closeFinish();
+  const html = buildFullReport();
+  openReportWindow(html,'full');
+}
+function openReportWindow(html, type){
+  const w = window.open('','_blank','width=800,height=900');
+  if(!w){ showToast('Allow popups or use Print below',true); return; }
+  w.document.write(html);
+  w.document.close();
+}
+function exportJSON(){
+  closeFinish();
+  const rec = cRec();
+  const blob = new Blob([JSON.stringify(rec, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const name = (rec.interviewer_name||'record').replace(/\s/g,'_');
+  const date = (rec.interview_date||new Date().toISOString().split('T')[0]);
+  a.href=url; a.download=`health_survey_${name}_${date}.json`;
+  a.click(); URL.revokeObjectURL(url);
+  showToast('✓ JSON saved to Downloads');
+}
+
+// ══════════════════════════════════════════════════════
+//  BRIEF REPORT BUILDER
+// ══════════════════════════════════════════════════════
+function buildBriefReport(r){
+  const flags=[], concerns=[], notes=[];
+
+  // ── Detect red flags ──
+  if(r.b_type==='Permanent'&&r.b_roof==='Grass Thatched') flags.push('Permanent house with grass-thatched roof');
+  if(r.b_type==='Permanent'&&r.b_floor==='Earthen') flags.push('Permanent house with earthen floor');
+  if(r.b_cook==='Inside'&&(r.b_fuel==='Firewood'||r.b_fuel==='Charcoal')&&r.b_ventil==='Poor') flags.push('Indoor cooking with '+r.b_fuel+' — POOR ventilation (respiratory risk)');
+  if(r.b_animals==='Yes') concerns.push('Household shares living space with domestic animals');
+  if(r.b_smoke==='Yes'&&r.b_smoke_in==='Yes') flags.push('Smoking inside the house — health risk to household members');
+  if(r.g_latrine==='No') flags.push('No pit latrine — open defecation risk');
+  if((r.h_wld==='0–5 m'||r.h_wld==='5–10 m')&&r.h_protected==='No') flags.push('Water source very close to latrine AND unprotected — HIGH contamination risk');
+  if(r.h_treat==='No') concerns.push('Water not treated before drinking');
+  if(r.f_heard==='No') flags.push('Respondent has NEVER heard of HIV/AIDS — needs health education');
+  if(r.c_preg==='Yes'&&r.a_gender==='Male') flags.push('Data inconsistency: Male respondent recorded as pregnant');
+  if([].concat(r.c_ill||[]).length>0&&r.c_consult==='No') concerns.push('Illness reported but no medical consultation sought');
+  if(r.i_circ==='Female'||r.i_circ==='Both') flags.push('Female genital mutilation (FGM) reported — needs follow-up');
+  if(r.e_skip==='Yes'&&r.e_skip_w==='Not enough food') concerns.push('Household skipping meals due to food shortage');
+  if(r.e_enough==='No') concerns.push('Food cooked is not enough for the household');
+  if(r.a_edu==='None'&&r.a_occ==='Government') flags.push('No formal education but Government employment — verify');
+
+  // Check MUAC flags
+  for(let i=1;i<=7;i++){
+    const muac=parseFloat(r['ea'+i+'m']||0);
+    const dob=r['ea'+i+'d']||'';
+    if(muac>0&&muac<12.5) flags.push(`Child ${i}: MUAC ${muac}cm — SEVERE ACUTE MALNUTRITION (SAM)`);
+    else if(muac>0&&muac<13.5) concerns.push(`Child ${i}: MUAC ${muac}cm — Moderate Acute Malnutrition (MAM)`);
+  }
+
+  // ── Key stats ──
+  const totPeople=(parseInt(r.a_tot_m)||0)+(parseInt(r.a_tot_f)||0);
+  const houseType=r.b_type||'—';
+  const water=[].concat(r.h_wsrc||[]).join(', ')||'—';
+  const illness=[].concat(r.c_ill||[]).join(', ')||'None reported';
+  const deaths=r.c_deaths==='Yes'?`Yes (${r.c_deaths_n||'?'} deaths in 5 years)`:'None reported';
+  const latrine=r.g_latrine==='Yes'?`Yes (${r.g_lat_u||'—'})`:r.g_latrine==='No'?'NO LATRINE':'—';
+
+  const now = new Date().toLocaleDateString('en-KE',{year:'numeric',month:'long',day:'numeric'});
+
+  const flagHTML = flags.length
+    ? flags.map(f=>`<div class="rf-item rf-red">🚨 ${f}</div>`).join('')
+    : '<div class="rf-item rf-ok">✅ No critical red flags identified</div>';
+
+  const concernHTML = concerns.length
+    ? concerns.map(c=>`<div class="rf-item rf-amber">⚠️ ${c}</div>`).join('')
+    : '<div class="rf-item rf-ok">✅ No significant concerns</div>';
+
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8">
+<title>Brief Health Report</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:#f5f5f5;color:#1a2b22;font-size:14px;}
+.page{max-width:720px;margin:0 auto;background:#fff;min-height:100vh;}
+.report-header{background:linear-gradient(135deg,#1e5c38,#1a4f6e);color:#fff;padding:24px 28px;}
+.report-logo{font-size:32px;margin-bottom:8px;}
+.report-title{font-size:1.3rem;font-weight:700;margin-bottom:2px;}
+.report-sub{font-size:0.78rem;opacity:.7;}
+.report-meta{background:#e8f5ed;padding:14px 28px;border-bottom:1px solid #cce0d4;display:flex;flex-wrap:wrap;gap:16px;}
+.meta-item{font-size:0.78rem;} .meta-label{color:#6b8a74;font-weight:600;text-transform:uppercase;letter-spacing:.4px;margin-bottom:1px;}
+.meta-value{color:#1a2b22;font-weight:600;}
+.body{padding:20px 28px;}
+.section{margin-bottom:20px;}
+.sec-head{font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#6b8a74;border-bottom:2px solid #e8f5ed;padding-bottom:5px;margin-bottom:10px;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.stat-box{background:#f9f7f4;border-radius:8px;padding:10px 12px;border-left:3px solid #cce0d4;}
+.stat-label{font-size:0.68rem;color:#6b8a74;font-weight:600;text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px;}
+.stat-value{font-size:0.9rem;font-weight:700;color:#1a2b22;}
+.rf-item{padding:9px 12px;border-radius:8px;font-size:0.82rem;font-weight:500;margin-bottom:6px;line-height:1.4;}
+.rf-red{background:#fdecea;color:#c0392b;border-left:3px solid #c0392b;}
+.rf-amber{background:#fff8e1;color:#e65100;border-left:3px solid #f39c12;}
+.rf-ok{background:#e8f5ed;color:#1e5c38;border-left:3px solid #4CAF72;}
+.rf-red strong,.rf-amber strong{font-weight:700;}
+.summary-box{background:linear-gradient(135deg,#f9f7f4,#e8f5ed);border:1px solid #cce0d4;border-radius:12px;padding:14px 16px;margin-bottom:16px;}
+.summary-text{font-size:0.85rem;line-height:1.7;color:#1a2b22;}
+.summary-text b{color:#1e5c38;}
+.summary-text .red{color:#c0392b;font-weight:700;}
+.print-btn{position:fixed;bottom:20px;right:20px;background:#1e5c38;color:#fff;border:none;border-radius:12px;padding:13px 22px;font-family:inherit;font-size:0.9rem;font-weight:700;cursor:pointer;box-shadow:0 4px 20px rgba(0,0,0,.2);display:flex;align-items:center;gap:7px;}
+.sig{text-align:center;padding:20px;color:#aaa;font-size:0.7rem;border-top:1px solid #eee;margin-top:20px;}
+@media print{.print-btn{display:none!important;}.page{box-shadow:none;}}
+</style></head><body>
+<div class="page">
+
+<div class="report-header">
+  <div class="report-logo">📋</div>
+  <div class="report-title">Community Health Brief Report</div>
+  <div class="report-sub">Great Lakes University · Nyamache Sub County Hospital · ${now}</div>
+</div>
+
+<div class="report-meta">
+  <div class="meta-item"><div class="meta-label">Interviewer</div><div class="meta-value">${r.interviewer_name||getUserName()||'—'}</div></div>
+  <div class="meta-item"><div class="meta-label">Date</div><div class="meta-value">${r.interview_date||now}</div></div>
+  <div class="meta-item"><div class="meta-label">Location</div><div class="meta-value">${r.interview_location||r.interview_location_custom||'—'}</div></div>
+  <div class="meta-item"><div class="meta-label">Respondent</div><div class="meta-value">${r.a_age||'?'} yrs, ${r.a_gender||'?'}, ${r.a_marital||'?'}</div></div>
+</div>
+
+<div class="body">
+
+  <!-- NARRATIVE SUMMARY -->
+  <div class="section">
+    <div class="sec-head">📝 Summary</div>
+    <div class="summary-box">
+      <div class="summary-text">
+        This interview was conducted with a <b>${r.a_age||'?'}-year-old ${r.a_gender||'person'}</b>
+        ${r.a_marital?`(${r.a_marital})`:''}
+        ${r.a_pos?`, the <b>${r.a_pos}</b> of the household`:''}
+        in <b>${r.interview_location||r.interview_location_custom||'the community'}</b>.
+        The household has <b>${totPeople} member${totPeople!==1?'s':''}</b>
+        (${r.a_tot_m||0} male, ${r.a_tot_f||0} female).
+        They live in a <b>${r.b_type||'?'} house</b>
+        with <b>${r.b_roof||'?'} roofing</b> and <b>${r.b_floor||'?'} floor</b>.
+        Primary water source is <b>${water}</b>
+        ${r.h_treat==='Yes'?'(treated before drinking)':r.h_treat==='No'?'<span class="red">(NOT treated — risk)</span>':''}. 
+        ${r.g_latrine==='Yes'?'The household has a pit latrine.':'<span class="red">There is NO pit latrine.</span>'}
+        ${r.f_heard==='No'?'<span class="red">Respondent has never heard of HIV/AIDS.</span>':r.f_tested==='Yes'?'Respondent has been tested for HIV.':'Respondent has NOT been tested for HIV.'}
+        ${[].concat(r.c_ill||[]).length>0?`Illnesses reported in past 6 months: <b>${illness}</b>.`:'No illnesses reported in past 6 months.'}
+      </div>
+    </div>
+  </div>
+
+  <!-- KEY STATS GRID -->
+  <div class="section">
+    <div class="sec-head">📊 Key Household Data</div>
+    <div class="grid2">
+      <div class="stat-box"><div class="stat-label">House Type</div><div class="stat-value">${houseType}</div></div>
+      <div class="stat-box"><div class="stat-label">Household Size</div><div class="stat-value">${totPeople} people</div></div>
+      <div class="stat-box"><div class="stat-label">Bedrooms</div><div class="stat-value">${r.b_rooms||'—'}</div></div>
+      <div class="stat-box"><div class="stat-label">Per Bedroom</div><div class="stat-value">${r.b_proom||'—'} people</div></div>
+      <div class="stat-box"><div class="stat-label">Water Source</div><div class="stat-value">${water}</div></div>
+      <div class="stat-box"><div class="stat-label">Water Treated</div><div class="stat-value">${r.h_treat||'—'}</div></div>
+      <div class="stat-box"><div class="stat-label">Pit Latrine</div><div class="stat-value">${latrine}</div></div>
+      <div class="stat-box"><div class="stat-label">Main Fuel</div><div class="stat-value">${r.b_fuel||'—'}</div></div>
+      <div class="stat-box"><div class="stat-label">Deaths (5 yrs)</div><div class="stat-value">${deaths}</div></div>
+      <div class="stat-box"><div class="stat-label">HIV Tested</div><div class="stat-value">${r.f_tested||'—'}</div></div>
+      <div class="stat-box"><div class="stat-label">Education</div><div class="stat-value">${r.a_edu||'—'}</div></div>
+      <div class="stat-box"><div class="stat-label">Occupation</div><div class="stat-value">${r.a_occ||'—'}</div></div>
+    </div>
+  </div>
+
+  <!-- RED FLAGS -->
+  <div class="section">
+    <div class="sec-head">🚨 Red Flags — Requires Immediate Attention</div>
+    ${flagHTML}
+  </div>
+
+  <!-- CONCERNS -->
+  <div class="section">
+    <div class="sec-head">⚠️ Concerns — Follow Up Recommended</div>
+    ${concernHTML}
+  </div>
+
+  <!-- ILLNESSES -->
+  <div class="section">
+    <div class="sec-head">🏥 Health — Illnesses Reported</div>
+    <div class="rf-item ${[].concat(r.c_ill||[]).length>0?'rf-amber':'rf-ok'}">${illness}</div>
+    ${r.c_consult?`<div class="rf-item ${r.c_consult==='Yes'?'rf-ok':'rf-amber'}">Consultation sought: <b>${r.c_consult}</b>${r.c_where?' — at '+r.c_where:''}</div>`:''}
+  </div>
+
+  <!-- PESTS OBSERVED -->
+  ${['rats','cockroaches','mosquitoes','jiggers','bedbugs'].some(p=>r['k_'+p]==='Present')?`
+  <div class="section">
+    <div class="sec-head">🐛 Pests Observed (Present)</div>
+    ${['Rats','Cockroaches','Mosquitoes','Jiggers','Bedbugs','Houseflies','Ticks','Fleas','Tsetse_flies'].filter(p=>r['k_'+p.toLowerCase()]==='Present').map(p=>`<div class="rf-item rf-amber">🐛 ${p.replace('_',' ')} — present</div>`).join('')}
+  </div>`:''}
+
+  <!-- OBSERVER NOTES -->
+  ${r.k_notes?`<div class="section"><div class="sec-head">📝 Interviewer Notes</div><div class="summary-box"><div class="summary-text">${r.k_notes}</div></div></div>`:''}
+
+</div>
+
+<div class="sig">Built by <strong>HazzinBR</strong> · Great Lakes University · Free to use · No copyright</div>
+</div>
+<button class="print-btn" onclick="window.print()">🖨 Print / Save PDF</button>
+</body></html>`;
+}
+
+// ══════════════════════════════════════════════════════
+//  FULL REPORT BUILDER
+// ══════════════════════════════════════════════════════
+function buildFullReport(){
+  // Temporarily show all sections, capture their content, then restore
+  const cards = document.querySelectorAll('.sec-card');
+  cards.forEach(c=>c.style.display='block');
+
+  const now = new Date().toLocaleDateString('en-KE',{year:'numeric',month:'long',day:'numeric'});
+  const r = cRec();
+  const name = r.interviewer_name||getUserName()||'—';
+  const loc  = r.interview_location||r.interview_location_custom||'—';
+
+  // Capture rendered section HTML
+  let sectionsHTML = '';
+  document.querySelectorAll('.sec-card').forEach((card,i)=>{
+    const hdr = card.querySelector('.sec-hdr');
+    const body = card.querySelector('.sec-body');
+    if(!hdr||!body) return;
+    const title = hdr.querySelector('.sec-title')?.textContent||'Section '+(i+1);
+    const badge = hdr.querySelector('.sec-badge')?.textContent||'';
+    const color = hdr.style.background||'linear-gradient(135deg,#1e5c38,#27764a)';
+    // Collect all answered fields in this section
+    let rows='';
+    body.querySelectorAll('.form-group').forEach(grp=>{
+      const lbl = grp.querySelector('.ql')?.textContent?.replace('*','').trim();
+      if(!lbl) return;
+      // Get value
+      const checked = [...grp.querySelectorAll('input:checked,select')].map(el=>{
+        if(el.type==='radio'||el.type==='checkbox') return el.checked?el.value:'';
+        return el.value;
+      }).filter(Boolean).join(', ');
+      const text = [...grp.querySelectorAll('input[type=text],input[type=number],input[type=date],textarea')].map(el=>el.value).filter(Boolean).join(' ');
+      const val = checked||text;
+      if(!val) return;
+      rows+=`<tr><td class="q-cell">${lbl}</td><td class="a-cell">${val}</td></tr>`;
+    });
+    if(!rows) return;
+    sectionsHTML+=`
+    <div class="full-section">
+      <div class="full-sec-hdr" style="${color}">
+        <span class="full-badge">${badge}</span> ${title}
+      </div>
+      <table class="full-table"><tbody>${rows}</tbody></table>
+    </div>`;
+  });
+
+  // Restore
+  cards.forEach((c,i)=>c.style.display=i===cur?'block':'none');
+
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8">
+<title>Full Health Survey Report</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:#f5f5f5;color:#1a2b22;font-size:13px;}
+.page{max-width:760px;margin:0 auto;background:#fff;min-height:100vh;}
+.report-header{background:linear-gradient(135deg,#1a4f6e,#1e5c38);color:#fff;padding:22px 28px;}
+.report-title{font-size:1.2rem;font-weight:700;margin-bottom:2px;}
+.report-sub{font-size:0.76rem;opacity:.7;}
+.report-meta{background:#e8f5ed;padding:12px 28px;border-bottom:1px solid #cce0d4;display:flex;flex-wrap:wrap;gap:14px;}
+.meta-item{font-size:0.76rem;} .meta-label{color:#6b8a74;font-weight:600;text-transform:uppercase;letter-spacing:.4px;}
+.meta-value{color:#1a2b22;font-weight:600;}
+.body{padding:16px 28px 40px;}
+.full-section{margin-bottom:18px;border-radius:10px;overflow:hidden;border:1px solid #e0e0e0;}
+.full-sec-hdr{color:#fff;padding:9px 14px;font-size:0.82rem;font-weight:700;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+.full-badge{background:rgba(255,255,255,.2);padding:2px 8px;border-radius:99px;font-size:0.65rem;margin-right:6px;letter-spacing:.5px;}
+.full-table{width:100%;border-collapse:collapse;}
+.full-table tr:nth-child(even){background:#f9f9f9;}
+.q-cell{padding:7px 12px;color:#666;width:45%;font-size:0.76rem;vertical-align:top;border-bottom:1px solid #f0f0f0;}
+.a-cell{padding:7px 12px;font-weight:600;color:#1a2b22;font-size:0.82rem;border-bottom:1px solid #f0f0f0;}
+.print-btn{position:fixed;bottom:20px;right:20px;background:#1a4f6e;color:#fff;border:none;border-radius:12px;padding:13px 22px;font-family:inherit;font-size:0.9rem;font-weight:700;cursor:pointer;box-shadow:0 4px 20px rgba(0,0,0,.2);}
+.sig{text-align:center;padding:20px;color:#aaa;font-size:0.7rem;border-top:1px solid #eee;}
+@media print{.print-btn{display:none!important;}}
+</style></head><body>
+<div class="page">
+<div class="report-header">
+  <div style="font-size:28px;margin-bottom:6px">📄</div>
+  <div class="report-title">Full Community Health Survey Report</div>
+  <div class="report-sub">Great Lakes University · Nyamache Sub County Hospital · ${now}</div>
+</div>
+<div class="report-meta">
+  <div class="meta-item"><div class="meta-label">Interviewer</div><div class="meta-value">${name}</div></div>
+  <div class="meta-item"><div class="meta-label">Date</div><div class="meta-value">${r.interview_date||now}</div></div>
+  <div class="meta-item"><div class="meta-label">Location</div><div class="meta-value">${loc}</div></div>
+  <div class="meta-item"><div class="meta-label">Respondent</div><div class="meta-value">${r.a_age||'?'} yrs · ${r.a_gender||'?'} · ${r.a_marital||'?'}</div></div>
+</div>
+<div class="body">${sectionsHTML}</div>
+<div class="sig">Built by <strong>HazzinBR</strong> · Great Lakes University · Free to use · No copyright</div>
+</div>
+<button class="print-btn" onclick="window.print()">🖨 Print / Save PDF</button>
+</body></html>`;
+}
 
 // ══════════════════════════════════════════════════════
 //  LIVE INPUT LISTENER — auto-save + run rules
@@ -1228,20 +1625,47 @@ function chips(c){return `<div class="chips">${c}</div>`;}
 function fg(c){return `<div class="form-group">${c}</div>`;}
 function vb(){return `<div class="val-banner">⚠ Please fill in all required fields before going to next section.</div>`;}
 function sub(t){return `<div class="sub-ttl">${t}</div>`;}
-function sec(badge,title,body){return `<div class="sec-hdr"><div class="sec-badge">${badge}</div><div class="sec-title">${title}</div></div><div class="sec-body">${vb()}${body}</div>`;}
+function sec(badge,title,body,color1='#1e5c38',color2='#27764a'){
+  return `<div class="sec-hdr" style="background:linear-gradient(135deg,${color1} 0%,${color2} 100%)"><div class="sec-badge">${badge}</div><div class="sec-title">${title}</div></div><div class="sec-body">${vb()}${body}</div>`;
+}
 
 // ─── SECTIONS ───
-function bConsent(){return sec('Introduction','Consent Form',`
+function bConsent(){
+// Pre-fill today's date
+const today = new Date().toISOString().split('T')[0];
+return sec('Introduction','Consent Form',`
 <div class="consent-box">
-<p>Good morning/afternoon, my name is _____________________. I am a student collecting data on factors that contribute to ill health in your area.</p>
-<p>The data will be shared with the area chief and county health director to help put interventions in place. Your responses are completely confidential. You may withdraw at any time without consequences.</p>
+<p>Good morning/afternoon, my name is <strong id="consent_name_display">___</strong>. I am a student from <strong>Great Lakes University of Kisumu</strong>, collecting data on factors that contribute to ill health in your area.</p>
+<p>The data will be shared with the area chief and county health director. Your responses are completely confidential. You may withdraw at any time.</p>
 </div>
-${fg(q('Q1','Interviewer Name','req')+ti('interviewer_name','Full name'))}
-${fg(q('Q2','Institution / School')+ti('interviewer_school','Name of institution'))}
-${fg(q('Q3','Interview Date','req')+`<input class="form-input" type="date" name="interview_date">`)}
-${fg(q('Q4','Location / Village')+ti('interview_location','Village, Sub-location, County'))}
-${fg(q('Q5','Does respondent consent to this interview?','req')+chips(radio('consent_given','Yes','✓ Yes — Consents')+radio('consent_given','No','✗ No — Declines'))+'<p class="info-note">If respondent declines, stop the interview.</p>')}
-`);}
+
+<!-- Interviewer card — auto-filled from profile, read-only -->
+<div style="background:var(--green-pale);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:16px;display:flex;align-items:center;gap:12px">
+  <div style="font-size:28px">👤</div>
+  <div style="flex:1">
+    <div style="font-size:0.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:600">Interviewer</div>
+    <div style="font-weight:700;font-size:0.95rem;color:var(--text)" id="consent_interviewer_card">Loading...</div>
+    <div style="font-size:0.75rem;color:var(--muted)">Great Lakes University of Kisumu</div>
+  </div>
+  <a onclick="forgetUser()" style="font-size:0.68rem;color:var(--muted);text-decoration:underline;cursor:pointer;white-space:nowrap">Not me?</a>
+</div>
+
+<!-- Hidden fields auto-filled -->
+<input type="hidden" name="interviewer_name" id="h_interviewer_name">
+<input type="hidden" name="interviewer_school" value="Great Lakes University of Kisumu">
+
+${fg(q('Q1','Interview Date','req')+`<input class="form-input" type="date" name="interview_date" value="${today}">`)}
+
+${fg(q('Q2','Interview Location','req')+`
+<div class="chips" style="margin-bottom:8px">
+  <div class="chip"><input type="radio" name="interview_location" id="loc_nyamache" value="Nyamache Sub County Hospital"><label for="loc_nyamache">🏥 Nyamache Sub County Hospital</label></div>
+  <div class="chip"><input type="radio" name="interview_location" id="loc_other" value="__other__"><label for="loc_other">📍 Other location</label></div>
+</div>
+<input class="form-input" type="text" id="loc_other_input" name="interview_location_custom" placeholder="Type village / sub-location..." style="display:none;margin-top:4px" autocomplete="off">
+<p class="info-note">Tap 'Other location' to type a custom location</p>`)}
+
+${fg(q('Q3','Does respondent consent to this interview?','req')+chips(radio('consent_given','Yes','✓ Yes — Consents')+radio('consent_given','No','✗ No — Declines'))+'<p class="info-note">If respondent declines, stop the interview.</p>')}
+`,'#1a5276','#1f618d');}
 
 function bSecA(){
 const ab=[['0–1 yrs','a_01'],['2–3 yrs','a_23'],['4–5 yrs','a_45'],['6–10 yrs','a_610'],['11–15 yrs','a_1115'],['16–20 yrs','a_1620'],['21–59 yrs','a_2159'],['60+ yrs','a_60p']];
@@ -1264,7 +1688,7 @@ ${fg(q('A9','Household head')+chips(radio('a_head','Grandfather','Grandfather')+
 ${fg(q('A10','Highest Education Level')+chips(radio('a_edu','None','None')+radio('a_edu','Primary','Primary')+radio('a_edu','Secondary','Secondary')+radio('a_edu','Tertiary','Tertiary')))}
 ${fg(q('A11','Occupation')+chips(radio('a_occ','Farming','Farming')+radio('a_occ','Government','Government')+radio('a_occ','Business','Business')+radio('a_occ','Other','Other'))+ti('a_occ_other','Other — specify...'))}
 ${fg(q('A12','Religion')+chips(radio('a_rel','Christian','Christian')+radio('a_rel','Muslim','Muslim')+radio('a_rel','Hindu','Hindu')+radio('a_rel','Atheist','Atheist')+radio('a_rel','Other','Other')))}
-`);}
+`,'#1e5c38','#27764a');}
 
 function bSecB(){return sec('Section B','Housing',`
 ${fg(q('B1','Type of House (Observe)','req')+chips(radio('b_type','Permanent','Permanent')+radio('b_type','Semi-permanent','Semi-permanent')+radio('b_type','Temporary','Temporary')))}
@@ -1283,7 +1707,7 @@ ${fg(q('B13','Land Size')+chips(radio('b_land','0–1 acres','0–1 acres')+radi
 ${fg(q('B14','Share House with Animals?')+chips(radio('b_animals','Yes','Yes')+radio('b_animals','No','No')))}
 ${fg(q('B15','Any Household Member Smokes?')+chips(radio('b_smoke','Yes','Yes')+radio('b_smoke','No','No')))}
 ${fg(q('B16','If Yes — Smokes Inside House?')+chips(radio('b_smoke_in','Yes','Yes')+radio('b_smoke_in','No','No')))}
-`);}
+`,'#6e4c1e','#8b6220');}
 
 function bSecC(){return sec('Section C','Family Medical History',`
 ${fg(q('C1','Illnesses in last 6 months (tick all)')+chips(cb('c_ill','Diarrhoea','Diarrhoea')+cb('c_ill','Cough/Colds','Cough/Colds')+cb('c_ill','Breathing difficulty','Breathing difficulty')+cb('c_ill','Fever','Fever')+cb('c_ill','Convulsions','Convulsions')+cb('c_ill','Abdominal pains','Abdominal pains')+cb('c_ill','Vomiting','Vomiting')+cb('c_ill','Headache','Headache')+cb('c_ill','Loss of consciousness','Loss of consciousness')+cb('c_ill','Dizziness','Dizziness')+cb('c_ill','Other','Other'))+ti('c_ill_other','Other — specify...'))}
@@ -1303,7 +1727,7 @@ ${fg(q('C14','Family member with special needs?')+chips(radio('c_spec','Yes','Ye
 ${fg(q('C15','Nature of disability')+chips(cb('c_disab','Visual','Visual impairment')+cb('c_disab','Hearing','Hearing impairment')+cb('c_disab','Mental','Mentally challenged')+cb('c_disab','Physical','Physically challenged')+cb('c_disab','Other','Other')))}
 ${fg(q('C16','Cause of disability')+chips(radio('c_disab_c','By birth','By birth')+radio('c_disab_c','Severe illness','Severe illness')+radio('c_disab_c','Accident','Accident')+radio('c_disab_c','Other','Other')))}
 ${fg(q('C17','Pregnant female in household?')+chips(radio('c_preg','Yes','Yes — go to Section D')+radio('c_preg','No','No')))}
-`);}
+`,'#922b21','#b03a2e');}
 
 function bSecD(){
 const vax=['BCG','OPV0','OPV1','OPV2','OPV3','PV1','PV2','PV3','Rota','Measles'];
@@ -1327,7 +1751,7 @@ ${fg(q('D11','Aware of family planning methods?')+chips(radio('d_fp','Yes','Yes'
 ${fg(q('D12','Ever used contraceptives?')+chips(radio('d_contra','Yes','Yes')+radio('d_contra','No','No')))}
 ${fg(q('D13','Contraceptive method used')+chips(cb('d_ct','Pills','Pills')+cb('d_ct','Depo Provera','Depo Provera')+cb('d_ct','IUD','IUD')+cb('d_ct','Norplant','Norplant')+cb('d_ct','Tubal ligation','Tubal ligation')+cb('d_ct','Condoms','Condoms')+cb('d_ct','Abstinence','Abstinence')+cb('d_ct','Other','Other')))}
 ${fg(q('D14','Family planning challenges')+chips(cb('d_fp_c','Spouse disapproval','Spouse disapproval')+cb('d_fp_c','Religion','Religion')+cb('d_fp_c','Side effects','Side effects')+cb('d_fp_c','Adherence','Adherence')+cb('d_fp_c','Culture','Culture')+cb('d_fp_c','Other','Other')))}
-`);}
+`,'#6c3483','#884ea0');}
 
 function bSecE(){return sec('Section E','Nutrition & Lifestyle',`
 ${fg(q('E1','Meals per day at home')+chips(radio('e_meals','1','1')+radio('e_meals','2','2')+radio('e_meals','3','3')+radio('e_meals','4','4')+radio('e_meals','More than 4','>4')))}
@@ -1370,11 +1794,11 @@ ${sub('E36. Anthropometry — Children 0–5 Years')}
 <tr><th>#</th><th>Sex</th><th>DOB</th><th>Ht(cm)</th><th>Wt(kg)</th><th>MUAC</th></tr>
 ${[1,2,3,4,5,6,7].map(i=>`<tr><td>${i}</td><td><select name="ea${i}s"><option value="">-</option><option>M</option><option>F</option></select></td><td><input type="date" name="ea${i}d"></td><td><input type="number" name="ea${i}h" min="30" max="130" step="0.1" placeholder="cm"></td><td><input type="number" name="ea${i}w" min="1" max="40" step="0.1" placeholder="kg"></td><td><input type="number" name="ea${i}m" min="5" max="30" step="0.1" placeholder="cm"></td></tr>`).join('')}
 </table></div>
-`);}
+`,'#a04000','#ca6f1e');}
 
 function bSecF(){return sec('Section F','HIV/AIDS',`
-${fg(q('F1','Have you heard about HIV/AIDS?','req')+chips(radio('f_heard','Yes','Yes')+radio('f_heard','No','No')))}
-${fg(q('F2','Where did you get HIV/AIDS information?')+chips(cb('f_info','Health Centre','Health Centre')+cb('f_info','Health Worker','Health Worker')+cb('f_info','Church','Church')+cb('f_info','Workshops','Workshops')+cb('f_info','Media','Media')+cb('f_info','Other','Other')))}
+${fg(q('F1','Have you heard about HIV/AIDS?','req')+chips(radio('f_heard','Yes','Yes')+radio('f_heard','No','No'))+'<p class="info-note" id="hiv_no_note" style="display:none;color:var(--red);font-weight:600">⚠ Respondent has NOT heard of HIV/AIDS — skip F2, go straight to F3. Flag for health education.</p>')}
+${fg(q('F2','Where did you get HIV/AIDS information?')+`<p class="info-note" style="margin-bottom:6px">Only answer if Yes to F1 above</p>`+chips(cb('f_info','Health Centre','Health Centre')+cb('f_info','Health Worker','Health Worker')+cb('f_info','Church','Church')+cb('f_info','Workshops','Workshops')+cb('f_info','Media','Media')+cb('f_info','Other','Other')))}
 ${fg(q('F3','Aware of HIV screening?')+chips(radio('f_screen','Yes','Yes')+radio('f_screen','No','No')))}
 ${fg(q('F4','How is HIV transmitted?')+chips(cb('f_trans','Sex','Sex')+cb('f_trans','Blood transfusion','Blood transfusion')+cb('f_trans','Sharing needles/razors','Sharing needles/razors')+cb('f_trans','Mother to child','Mother to child')+cb('f_trans','Other','Other')))}
 ${fg(q('F5','How can HIV be prevented?')+chips(cb('f_prev','Condoms','Condoms')+cb('f_prev','ARVs (PMTCT)','ARVs (PMTCT)')+cb('f_prev','Abstinence','Abstinence')+cb('f_prev','Faithfulness','Faithfulness')+cb('f_prev','Other','Other')))}
@@ -1397,7 +1821,7 @@ ${fg(q('F21','Door-to-door outreach in community?')+chips(radio('f_out','Yes','Y
 ${fg(q('F22','If Yes — outreach frequency per month')+chips(radio('f_out_f','Once','Once')+radio('f_out_f','Twice','Twice')+radio('f_out_f','Thrice','Thrice')+radio('f_out_f','Every week','Every week')))}
 ${fg(q('F23','Quality of healthcare at nearest facility')+chips(radio('f_qual','Excellent','Excellent')+radio('f_qual','Good','Good')+radio('f_qual','Average','Average')+radio('f_qual','Poor','Poor')))}
 ${fg(q('F24','Other facilities used when unwell')+chips(cb('f_of','Sub-county Hospital','Sub-county Hosp.')+cb('f_of','County Hospital','County Hosp.')+cb('f_of','Chemist','Chemist')+cb('f_of','Dispensary','Dispensary')+cb('f_of','Other','Other')))}
-`);}
+`,'#154360','#1a5276');}
 
 function bSecG(){
 const dm=['Pouring or dumping','Pit','Burning','Compost pit','Animal feeds','Manure','Other'];
@@ -1430,7 +1854,7 @@ ${fg(q('H4','Teeth brushing frequency per day')+chips(radio('g_brush','Never','N
 ${fg(q('H5','Ever had oral health problems?')+chips(radio('g_oral','Yes','Yes')+radio('g_oral','No','No')))}
 ${fg(q('H6','If Yes — what was done?')+chips(radio('g_oral_a','Dental clinic','Dental clinic')+radio('g_oral_a','Herbs','Herbs')+radio('g_oral_a','Other','Other')))}
 ${fg(q('H7','Dental check-up frequency per year')+chips(radio('g_dent','Never','Never')+radio('g_dent','Once','Once')+radio('g_dent','Twice','Twice')+radio('g_dent','More than twice','More than twice')))}
-`);}
+`,'#0e6655','#148f77');}
 
 function bSecH(){return sec('Section H','Environment & Water Supply',`
 ${fg(q('H1','Source of water','req')+chips(cb('h_wsrc','Spring','Spring')+cb('h_wsrc','River','River')+cb('h_wsrc','Well','Well')+cb('h_wsrc','Borehole','Borehole')+cb('h_wsrc','Lake','Lake')+cb('h_wsrc','Rain water','Rain water')+cb('h_wsrc','Other','Other')))}
@@ -1445,7 +1869,7 @@ ${fg(q('H9','Garbage disposal method')+chips(cb('h_garb','Burning','Burning')+cb
 ${fg(q('H10','Causes of air pollution')+chips(cb('h_air','None','None')+cb('h_air','Dust','Dust')+cb('h_air','Noise','Noise')+cb('h_air','Other','Other'))+ti('h_air_o','Specify other...'))}
 ${fg(q('H11','Causes of water pollution')+chips(cb('h_wp','None','None')+cb('h_wp','Domestic waste','Domestic waste')+cb('h_wp','Agrochemicals','Agrochemicals')+cb('h_wp','Other','Other')))}
 ${fg(q('H12','Causes of soil pollution')+chips(cb('h_sp','None','None')+cb('h_sp','General litter','General litter')+cb('h_sp','Human waste','Human waste')+cb('h_sp','Other','Other')))}
-`);}
+`,'#1a237e','#283593');}
 
 function bSecI(){return sec('Section I','Cultural Practices & Traditions',`
 ${sub('Rites of Passage')}
@@ -1465,7 +1889,7 @@ ${fg(q('I12','Negative implications of wife inheritance')+chips(cb('i_winh_n','S
 ${fg(q('I13','Rituals after childbirth?')+chips(radio('i_birth','Yes','Yes')+radio('i_birth','No','No'))+ti('i_birth_d','If yes — specify...'))}
 ${fg(q('I14','Rituals after death?')+chips(radio('i_death','Yes','Yes')+radio('i_death','No','No'))+ti('i_death_d','If yes — specify...'))}
 ${fg(q('I15','How are burials conducted?')+chips(radio('i_bur','Traditionally','Traditionally')+radio('i_bur','Religiously','Religiously')+radio('i_bur','Other','Other'))+ti('i_bur_o','Other — specify...'))}
-`);}
+`,'#4a235a','#6c3483');}
 
 function bSecJ(){
 const dis=['Diarrhoeal diseases','Malaria','Organophosphate poisoning','Upper Respiratory Tract Infections','Eye infections','Tuberculosis','Common Cold','Pneumonia','Skin infections','STIs','Malnutrition','Jiggers','Intestinal worms','Others'];
@@ -1476,7 +1900,7 @@ return sec('Section J','Common Health Problems in Community',`
 ${dis.map(d=>{const k=d.replace(/[\s\/\(\)&]/g,'_').toLowerCase();return `<tr><td class="ltd">${d}</td><td><input type="checkbox" name="j_${k}_c" value="Yes" style="width:20px;height:20px"></td><td><input type="checkbox" name="j_${k}_a" value="Yes" style="width:20px;height:20px"></td></tr>`;}).join('')}
 </table></div>
 ${fg(q('J_other','Other health problems not listed')+ta('j_other','List any other diseases in this community...'))}
-`);}
+`,'#7b241c','#943126');}
 
 function bSecK(){
 const pests=['Rats','Cockroaches','Bedbugs','Houseflies','Ticks','Jiggers','Mosquitoes','Fleas','Tsetse flies','Others'];
@@ -1487,7 +1911,7 @@ return sec('Section K','Pests & Vectors',`
 ${pests.map(p=>{const k=p.replace(/\s/g,'_').toLowerCase();return `<tr><td class="ltd">${p}</td><td><input type="radio" name="k_${k}" value="Present" style="width:18px;height:18px"></td><td><input type="radio" name="k_${k}" value="Absent" style="width:18px;height:18px"></td><td><input type="text" name="k_${k}_c" placeholder="Method..."></td></tr>`;}).join('')}
 </table></div>
 ${fg(q('K_notes','Interviewer Observations & Notes')+ta('k_notes','Record any additional observations about the household, environment, or health conditions observed...'))}
-`);}
+`,'#4d5a27','#6b7a34');}
 
 const BUILDERS=[bConsent,bSecA,bSecB,bSecC,bSecD,bSecE,bSecF,bSecG,bSecH,bSecI,bSecJ,bSecK];
 
@@ -1511,34 +1935,121 @@ document.addEventListener('DOMContentLoaded',init);
 // ══════════════════════════════════════════════════════
 //  WELCOME SCREEN LOGIC
 // ══════════════════════════════════════════════════════
-function setGreeting(){
+// ══════════════════════════════════════════════════════
+//  USER PROFILE — persistent name
+// ══════════════════════════════════════════════════════
+function getUserName(){ return localStorage.getItem('chsa_user_name')||''; }
+
+function forgetUser(){
+  if(!confirm('Remove your saved name from this phone?')) return;
+  localStorage.removeItem('chsa_user_name');
+  location.reload();
+}
+
+function saveUserName(){
+  const inp = document.getElementById('wc-name-input');
+  if(!inp || !inp.value.trim()){
+    inp && (inp.style.borderColor='rgba(255,100,100,.7)');
+    return;
+  }
+  const name = inp.value.trim();
+  // Capitalise first letter
+  const niceName = name.charAt(0).toUpperCase() + name.slice(1);
+  localStorage.setItem('chsa_user_name', niceName);
+  // Fill hidden fields on consent form
+  fillInterviewerFields(niceName);
+  showToast('Welcome, ' + niceName + '! 👋');
+  const setup = document.getElementById('wc-name-setup');
+  if(setup) setup.style.display='none';
+  applyWelcome();
+  const btn = document.getElementById('wc-enter');
+  if(btn) btn.style.display='flex';
+  setTimeout(enterApp, 1100);
+}
+
+function fillInterviewerFields(name){
+  // Fill the hidden fields on the consent page
+  const hn = document.getElementById('h_interviewer_name');
+  if(hn) hn.value = name;
+  // Also fill the card display
+  const card = document.getElementById('consent_interviewer_card');
+  if(card) card.textContent = name;
+  const disp = document.getElementById('consent_name_display');
+  if(disp) disp.textContent = name;
+}
+
+function applyWelcome(){
   const h = new Date().getHours();
-  let g = 'Good Morning';
-  if(h >= 12 && h < 17) g = 'Good Afternoon';
-  else if(h >= 17) g = 'Good Evening';
-  const el = document.getElementById('wc-greeting');
-  if(el) el.textContent = g;
+  let g = h < 12 ? 'Good Morning' : h < 17 ? 'Good Afternoon' : 'Good Evening';
+  const name = getUserName();
+  const greetEl = document.getElementById('wc-greeting');
+  const titleEl = document.getElementById('wc-name-title');
+  const subEl   = document.getElementById('wc-subtitle');
+
+  if(name){
+    if(greetEl) greetEl.textContent = g + ', ' + name + ' 👋';
+    if(titleEl) titleEl.innerHTML = 'Welcome back!';
+    if(subEl)   subEl.innerHTML = 'Great Lakes University · Nyamache<br><span style="opacity:.7;font-size:0.75rem">Community Health Situation Analysis</span>';
+    // Pre-fill consent form fields
+    setTimeout(()=> fillInterviewerFields(name), 400);
+  } else {
+    if(greetEl) greetEl.textContent = g;
+    if(titleEl) titleEl.innerHTML = 'Community Health<br>Survey';
+    if(subEl)   subEl.innerHTML = 'Great Lakes University · Nyamache Sub County<br>Situation Analysis Tool';
+    // Show name input
+    const setup = document.getElementById('wc-name-setup');
+    setTimeout(()=>{ if(setup) setup.style.display='block'; }, 1900);
+  }
 }
 
 function enterApp(){
   const ws = document.getElementById('welcome-screen');
-  if(ws){
-    ws.classList.add('hiding');
-    setTimeout(()=>{ ws.style.display='none'; }, 680);
-  }
+  if(ws){ ws.classList.add('hiding'); setTimeout(()=>ws.style.display='none', 660); }
 }
 
 function showDonateModal(){
   document.getElementById('donateModal').style.display='flex';
 }
 
-// Run greeting + show enter button after 1.8s
-setGreeting();
+// ── Spawn rising particles ──
+function spawnParticles(){
+  const container = document.getElementById('wc-particles');
+  if(!container) return;
+  for(let i=0;i<18;i++){
+    const p = document.createElement('div');
+    p.className = 'wc-particle';
+    p.style.left = Math.random()*100+'%';
+    p.style.width = p.style.height = (1+Math.random()*2.5)+'px';
+    p.style.animationDuration = (6+Math.random()*10)+'s';
+    p.style.animationDelay    = (Math.random()*8)+'s';
+    p.style.opacity = 0.2+Math.random()*0.5;
+    container.appendChild(p);
+  }
+}
+
+// ── Location toggle (Nyamache vs Other) ──
+document.addEventListener('change', e=>{
+  if(e.target.name === 'interview_location'){
+    const otherInput = document.getElementById('loc_other_input');
+    if(!otherInput) return;
+    if(e.target.value === '__other__'){
+      otherInput.style.display = 'block';
+      otherInput.focus();
+    } else {
+      otherInput.style.display = 'none';
+    }
+  }
+});
+
+// ── Run welcome ──
+spawnParticles();
+applyWelcome();
 setTimeout(()=>{
   const dots = document.getElementById('wc-dots');
-  const btn = document.getElementById('wc-enter');
+  const btn  = document.getElementById('wc-enter');
   if(dots){ dots.style.transition='opacity .4s'; dots.style.opacity='0'; setTimeout(()=>dots.style.display='none',400); }
-  if(btn){ btn.style.display='flex'; btn.style.animation='enterPulse 2.8s ease infinite'; }
+  if(btn && getUserName()){ btn.style.display='flex'; }
+  // First-timers: name setup shown by applyWelcome
 }, 1800);
 </script>
 
@@ -1647,6 +2158,24 @@ setTimeout(()=>{
 }
 </style>
 
+<!-- SYNC SETUP MODAL -->
+<div id="syncSetupModal" style="display:none;position:fixed;inset:0;z-index:600;background:rgba(0,0,0,.55);align-items:flex-end;justify-content:center;">
+  <div style="background:#fff;width:100%;max-width:480px;border-radius:20px 20px 0 0;padding:24px 20px calc(24px + env(safe-area-inset-bottom));">
+    <div style="text-align:center;margin-bottom:18px">
+      <div style="font-size:36px;margin-bottom:8px">☁</div>
+      <div style="font-size:1.1rem;font-weight:700;color:#1e5c38">Sync to Admin Database</div>
+      <div style="font-size:0.8rem;color:#6b8a74;margin-top:4px;line-height:1.5">Your admin/teacher will give you a URL and Key. Enter them here once and your data will sync automatically when online.</div>
+    </div>
+    <div id="sync-status-box" style="display:none;background:#e8f5ed;border:1px solid #cce0d4;border-radius:8px;padding:10px 12px;margin-bottom:14px;font-size:0.8rem;color:#1e5c38;font-weight:600"></div>
+    <label style="font-size:0.72rem;font-weight:700;color:#6b8a74;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px">Supabase URL (from admin)</label>
+    <input id="sync-url-input" class="form-input" type="url" placeholder="https://xxxx.supabase.co" style="margin-bottom:10px">
+    <label style="font-size:0.72rem;font-weight:700;color:#6b8a74;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px">API Key (from admin)</label>
+    <input id="sync-key-input" class="form-input" type="text" placeholder="eyJhbGci..." style="margin-bottom:14px">
+    <button onclick="saveSyncConfig()" style="width:100%;padding:13px;background:#1e5c38;color:#fff;border:none;border-radius:10px;font-family:inherit;font-size:0.95rem;font-weight:700;cursor:pointer;margin-bottom:8px">Save & Sync Now</button>
+    <button onclick="document.getElementById('syncSetupModal').style.display='none'" style="width:100%;padding:11px;background:#f9f7f4;color:#6b8a74;border:1.5px solid #cce0d4;border-radius:10px;font-family:inherit;font-size:0.88rem;font-weight:600;cursor:pointer">Close</button>
+  </div>
+</div>
+
 <script>
 // Service worker loaded from ./sw.js
 
@@ -1737,6 +2266,30 @@ function showInstallGuide() {
   if(modal) modal.style.display = 'flex';
 }
 
+function showSyncSetup(){
+  const modal=document.getElementById('syncSetupModal');
+  const urlEl=document.getElementById('sync-url-input');
+  const keyEl=document.getElementById('sync-key-input');
+  const box=document.getElementById('sync-status-box');
+  if(urlEl) urlEl.value=localStorage.getItem('chsa_sb_url')||'';
+  if(keyEl) keyEl.value=localStorage.getItem('chsa_sb_key')||'';
+  if(box){
+    if(isSyncConfigured()){ box.style.display='block'; box.textContent='✓ Sync is configured — '+allRecords?Object.keys(JSON.parse(localStorage.getItem('chsa4')||'{}')).length+' local records':''; }
+    else { box.style.display='none'; }
+  }
+  if(modal) modal.style.display='flex';
+}
+function saveSyncConfig(){
+  const url=(document.getElementById('sync-url-input')?.value||'').trim();
+  const key=(document.getElementById('sync-key-input')?.value||'').trim();
+  if(!url||!key){ showToast('Please enter both URL and Key',true); return; }
+  localStorage.setItem('chsa_sb_url',url);
+  localStorage.setItem('chsa_sb_key',key);
+  document.getElementById('syncSetupModal').style.display='none';
+  showToast('✓ Sync configured! Syncing now...');
+  setTimeout(syncAll, 500);
+}
+
 // Auto-show iOS hint after 4 seconds if not installed
 if (isIOS && !isStandalone) {
   setTimeout(() => {
@@ -1744,6 +2297,154 @@ if (isIOS && !isStandalone) {
     if(note) note.innerHTML = '💡 Open in Safari → tap Share ⬆ → Add to Home Screen';
   }, 100);
 }
+</script>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!--  SYNC ENGINE                                        -->
+<!-- ═══════════════════════════════════════════════════ -->
+<script>
+// ══════════════════════════════════════════════════════
+//  SUPABASE CONFIG
+//  Students: leave this as-is — admin will configure it
+//  Admin: replace SUPABASE_URL and SUPABASE_KEY below
+//  after setting up the free Supabase project
+// ══════════════════════════════════════════════════════
+const SUPABASE_URL = localStorage.getItem('chsa_sb_url') || '';
+const SUPABASE_KEY = localStorage.getItem('chsa_sb_key') || '';
+const SYNC_TABLE   = 'health_survey_records';
+
+// ── Sync status indicator in topbar ──
+function setSyncStatus(status){
+  // status: 'idle' | 'syncing' | 'ok' | 'offline' | 'error'
+  let el = document.getElementById('sync-dot');
+  if(!el){
+    el = document.createElement('span');
+    el.id = 'sync-dot';
+    el.style.cssText = 'width:8px;height:8px;border-radius:50%;display:inline-block;margin-left:4px;flex-shrink:0;transition:background .4s';
+    const tb = document.querySelector('.tb-left');
+    if(tb) tb.appendChild(el);
+  }
+  const colors = {idle:'rgba(255,255,255,.3)',syncing:'#f39c12',ok:'#4CAF72',offline:'rgba(255,255,255,.2)',error:'#e74c3c'};
+  el.style.background = colors[status]||colors.idle;
+  el.title = {idle:'Not synced',syncing:'Syncing...',ok:'Synced ✓',offline:'Offline',error:'Sync error'}[status]||'';
+}
+
+// ── Check if Supabase is configured ──
+function isSyncConfigured(){
+  const url = localStorage.getItem('chsa_sb_url')||'';
+  const key = localStorage.getItem('chsa_sb_key')||'';
+  return url.startsWith('https://') && key.length > 10;
+}
+
+// ── Upload one record to Supabase ──
+async function syncRecord(recData){
+  if(!isSyncConfigured()) return false;
+  if(!navigator.onLine){ setSyncStatus('offline'); return false; }
+  const url = localStorage.getItem('chsa_sb_url');
+  const key = localStorage.getItem('chsa_sb_key');
+  setSyncStatus('syncing');
+  try {
+    // Build a clean flat record for the database
+    const payload = {
+      record_id:    recData._id || ('R'+Date.now()),
+      interviewer:  recData.interviewer_name || localStorage.getItem('chsa_user_name') || 'Unknown',
+      interview_date: recData.interview_date || new Date().toISOString().split('T')[0],
+      location:     recData.interview_location || recData.interview_location_custom || '',
+      respondent_age:    parseInt(recData.a_age)||null,
+      respondent_gender: recData.a_gender||'',
+      house_type:   recData.b_type||'',
+      water_source: [].concat(recData.h_wsrc||[]).join(', '),
+      water_treated: recData.h_treat||'',
+      latrine:      recData.g_latrine||'',
+      hiv_heard:    recData.f_heard||'',
+      hiv_tested:   recData.f_tested||'',
+      illnesses:    [].concat(recData.c_ill||[]).join(', '),
+      deaths_5yr:   recData.c_deaths||'',
+      deaths_count: parseInt(recData.c_deaths_n)||0,
+      fuel:         recData.b_fuel||'',
+      education:    recData.a_edu||'',
+      occupation:   recData.a_occ||'',
+      consent:      recData.consent_given||'',
+      synced_at:    new Date().toISOString(),
+      raw_json:     JSON.stringify(recData),   // full record for admin
+    };
+    const res = await fetch(`${url}/rest/v1/${SYNC_TABLE}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type':  'application/json',
+        'apikey':        key,
+        'Authorization': 'Bearer ' + key,
+        'Prefer':        'resolution=merge-duplicates',
+      },
+      body: JSON.stringify(payload),
+    });
+    if(res.ok || res.status===201 || res.status===200){
+      setSyncStatus('ok');
+      // Mark as synced locally
+      if(recData._id) {
+        const stored = JSON.parse(localStorage.getItem('chsa4')||'{}');
+        if(stored[recData._id]){ stored[recData._id]._synced=true; localStorage.setItem('chsa4',JSON.stringify(stored)); }
+      }
+      return true;
+    } else {
+      const err = await res.text();
+      console.warn('Sync failed:', res.status, err);
+      setSyncStatus('error');
+      return false;
+    }
+  } catch(e){
+    console.warn('Sync error:', e);
+    setSyncStatus(navigator.onLine?'error':'offline');
+    return false;
+  }
+}
+
+// ── Sync all unsynced records ──
+async function syncAll(){
+  if(!isSyncConfigured()){ showToast('Sync not configured — see admin',true); return; }
+  const stored = JSON.parse(localStorage.getItem('chsa4')||'{}');
+  const unsynced = Object.entries(stored).filter(([id,r])=>!r._synced && r.consent_given==='Yes');
+  if(!unsynced.length){ showToast('All records already synced ✓'); return; }
+  showToast(`Syncing ${unsynced.length} record(s)...`);
+  let ok=0, fail=0;
+  for(const [id,rec] of unsynced){
+    const result = await syncRecord({...rec, _id:id});
+    if(result) ok++; else fail++;
+  }
+  showToast(fail>0 ? `⚠ ${ok} synced, ${fail} failed` : `✓ ${ok} record(s) synced!`, fail>0);
+}
+
+// ── Auto-sync when coming online ──
+window.addEventListener('online', ()=>{
+  setSyncStatus('idle');
+  setTimeout(syncAll, 2000);
+});
+window.addEventListener('offline', ()=> setSyncStatus('offline'));
+
+// ── Sync button in topbar ──
+setTimeout(()=>{
+  const tb = document.querySelector('.tb-left');
+  if(!tb) return;
+  if(isSyncConfigured()){
+    const btn = document.createElement('button');
+    btn.className = 'tb-rec';
+    btn.style.cssText = 'background:rgba(255,255,255,.12);padding:7px 10px;font-size:0.75rem';
+    btn.title = 'Sync data to server';
+    btn.innerHTML = '☁';
+    btn.onclick = syncAll;
+    document.querySelector('.tb-left')?.parentElement?.querySelector('div[style]')?.prepend(btn);
+  }
+  setSyncStatus(navigator.onLine?'idle':'offline');
+}, 1000);
+
+// ── Sync after saving a record ──
+const _origSaveCur = saveCur;
+// Hook into save to auto-sync
+document.addEventListener('chsa:saved', e=>{
+  if(isSyncConfigured() && navigator.onLine && e.detail){
+    syncRecord(e.detail).catch(()=>{});
+  }
+});
 </script>
 </body>
 </html>
