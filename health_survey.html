@@ -399,8 +399,11 @@ table.dt select{width:100%;padding:4px 3px;border:1px solid var(--border);border
     <div><div class="tb-title">Community Health Survey</div><div class="tb-sub">Situation Analysis — Offline</div></div>
   </div>
   <div style="display:flex;gap:7px;align-items:center">
+    <button id="sync-btn" onclick="openSyncModal()" title="Sync to admin" style="display:flex;align-items:center;gap:5px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:8px;padding:7px 10px;font-family:inherit;font-size:0.72rem;font-weight:600;cursor:pointer;white-space:nowrap;">
+      <span id="sync-dot" style="width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.3);flex-shrink:0;transition:background .4s;display:inline-block"></span>
+      <span id="sync-lbl">Sync</span>
+    </button>
     <button class="tb-rec" onclick="showInstallGuide()" style="background:rgba(255,255,255,.15);padding:8px 10px" title="Install app">📲</button>
-    <button class="tb-rec" onclick="showSyncSetup()" style="background:rgba(255,255,255,.15);padding:8px 10px" title="Sync settings">☁</button>
     <button class="tb-rec" onclick="openDrawer()">☰ Records</button>
   </div>
 </div>
@@ -471,12 +474,25 @@ function pRec(p){if(!recId)recId='R'+Date.now();recs[recId]={...cRec(),...p,_u:n
 
 function collectAll(){
   const r={};
-  document.querySelectorAll('.sec-card input,.sec-card select,.sec-card textarea').forEach(el=>{
+  // Include hidden inputs (interviewer_name etc) + all form fields
+  document.querySelectorAll('.sec-card input,.sec-card select,.sec-card textarea, input[type=hidden]').forEach(el=>{
     if(!el.name)return;
     if(el.type==='radio'||el.type==='checkbox'){
-      if(el.checked){const c=r[el.name];r[el.name]=c?[].concat(c,el.value):el.value;}
-    }else if(el.value)r[el.name]=el.value;
+      if(el.checked){
+        // Build arrays for checkboxes (multi-select fields like c_ill, h_wsrc)
+        const existing=r[el.name];
+        if(existing===undefined) r[el.name]=el.value;
+        else r[el.name]=[].concat(existing,el.value);
+      }
+    } else if(el.value){
+      r[el.name]=el.value;
+    }
   });
+  // Always capture interviewer name from localStorage as backup
+  if(!r.interviewer_name){
+    const n=localStorage.getItem('chsa_user_name');
+    if(n) r.interviewer_name=n;
+  }
   return r;
 }
 function loadInto(d){
@@ -655,7 +671,7 @@ function ruleHouseTypeVsLighting(){
 function ruleFuelVsCooking(){
   const cook = gvRadio('b_cook');
   const fuel = gvRadio('b_fuel');
-  const vent = gvRadio('b_vent');
+  const vent = gvRadio('b_ventil');
   const fuelGrp = document.querySelector('[name="b_fuel"]')?.closest('.form-group');
   if(cook === 'Inside' && (fuel === 'Firewood' || fuel === 'Charcoal') && vent === 'Poor'){
     showFieldMsg(fuelGrp,'⚠ Indoor cooking with '+fuel+' and poor ventilation — HIGH health risk. Note for intervention.','warn');
@@ -1217,7 +1233,13 @@ function showBlockedModal(title, body, btn){
 //  NAVIGATION
 // ══════════════════════════════════════════════════════
 function goSec(i){clearErr();cur=i;document.querySelectorAll('.sec-card').forEach((el,j)=>el.classList.toggle('active',j===i));updUI();window.scrollTo({top:0,behavior:'smooth'});setTimeout(runAllRules,100);}
-function nextSec(){if(!validate(cur))return;saveCur();showToast('✓ Saved');if(cur<SECS.length-1)goSec(cur+1);}
+function nextSec(){
+  if(!validate(cur))return;
+  saveCur();
+  showToast('✓ Saved');
+  // Don't sync mid-interview — record is incomplete. Sync only on Finish.
+  if(cur<SECS.length-1) goSec(cur+1);
+}
 function prevSec(){saveCur();if(cur>0)goSec(cur-1);}
 function updUI(){
   const t=SECS.length,p=Math.round((cur/(t-1))*100);
@@ -1246,9 +1268,12 @@ function renDrw(){
     const flags=[];
     if(r.consent_given==='No') flags.push('⛔ No Consent');
     if(r.a_age && (r.a_age<18||r.a_age>85)) flags.push('⚠ Age');
+    const syncBadge = r._synced
+      ? `<span style="font-size:0.62rem;background:#e8f5ed;color:#1e5c38;padding:1px 6px;border-radius:99px;margin-left:4px;font-weight:700">✓ Uploaded</span>`
+      : `<span style="font-size:0.62rem;background:#fff8e1;color:#d35400;padding:1px 6px;border-radius:99px;margin-left:4px;font-weight:700">⏳ Not uploaded</span>`;
     return `<div class="rec-item ${id===recId?'act':''}" onclick="loadRec('${id}')">
       <div>
-        <div class="rec-name">${nm} ${flags.map(f=>`<span style="font-size:0.65rem;background:#fdecea;color:#c00;padding:1px 6px;border-radius:99px;margin-left:4px">${f}</span>`).join('')}</div>
+        <div class="rec-name">${nm} ${flags.map(f=>`<span style="font-size:0.65rem;background:#fdecea;color:#c00;padding:1px 6px;border-radius:99px;margin-left:4px">${f}</span>`).join('')}${syncBadge}</div>
         <div class="rec-meta">${r._u||''}</div>
       </div>
       <button class="rec-del" onclick="event.stopPropagation();delRec('${id}')">🗑</button>
@@ -1268,25 +1293,96 @@ function showToast(m,e=false){const t=document.getElementById('toast');t.textCon
 // ══════════════════════════════════════════════════════
 //  FINISH / PRINT
 // ══════════════════════════════════════════════════════
-function showFinish(){
+async function showFinish(){
   if(!validate(cur))return;
   saveCur();
+
   const m=document.getElementById('finModal');
-  m.querySelector('.modal-icon').textContent='🎉';
-  m.querySelector('.modal-title').textContent='Interview Complete!';
-  m.querySelector('.modal-body').textContent='Choose how to export this record:';
+  m.querySelector('.modal-icon').textContent='⏳';
+  m.querySelector('.modal-title').textContent='Saving & Uploading…';
+  m.querySelector('.modal-body').textContent='Please wait while your record is uploaded to the admin dashboard.';
+  m.querySelector('.modal-btns').innerHTML='';
+  m.classList.add('open');
+
+  // ── Attempt sync and wait for real result ──
+  let syncOk = false;
+  let syncErr = '';
+  if(isSyncConfigured && isSyncConfigured() && navigator.onLine && recId){
+    setSyncStatus('syncing');
+    const stored=JSON.parse(localStorage.getItem('chsa4')||'{}');
+    const rec=stored[recId];
+    if(rec){
+      try{
+        const result = await syncRecord({...rec, _id:recId});
+        syncOk = result.ok;
+        syncErr = result.err || '';
+      }catch(e){
+        syncOk = false;
+        syncErr = e.message;
+      }
+    }
+  } else if(!navigator.onLine){
+    syncErr = 'offline';
+  }
+
+  // ── Show result ──
+  if(syncOk){
+    m.querySelector('.modal-icon').textContent='🎉';
+    m.querySelector('.modal-title').textContent='Interview Complete!';
+    m.querySelector('.modal-body').innerHTML='<span style="color:#1e5c38;font-weight:700">✓ Successfully uploaded to admin dashboard.</span><br><br>Choose how to export this record:';
+    setSyncStatus('ok');
+  } else if(syncErr === 'offline'){
+    m.querySelector('.modal-icon').textContent='📴';
+    m.querySelector('.modal-title').textContent='Saved Locally';
+    m.querySelector('.modal-body').innerHTML='<span style="color:#d35400;font-weight:700">⚠ You are offline.</span><br><br>Record saved on this device. It will upload automatically when you connect to the internet. You can also tap Sync manually from the top bar.';
+    setSyncStatus('offline');
+  } else {
+    m.querySelector('.modal-icon').textContent='⚠️';
+    m.querySelector('.modal-title').textContent='Upload Failed';
+    m.querySelector('.modal-body').innerHTML='<span style="color:#d32f2f;font-weight:700">✗ Could not upload to admin.</span><br><small style="color:#888">'+syncErr+'</small><br><br>Record is saved on this device. Tap <strong>Retry Upload</strong> or use the Sync button later.';
+    setSyncStatus('error');
+  }
+
   m.querySelector('.modal-btns').innerHTML=`
+    ${!syncOk ? '<button class="mbtn" style="background:#1a4f6e;color:#fff;margin-bottom:4px" onclick="retryFinishSync()">🔄 Retry Upload</button>' : ''}
     <button class="mbtn mbtn-p" onclick="openBriefReport()" style="background:#1e5c38">
       📋 Brief Report <span style="font-size:0.72rem;opacity:.75;display:block;font-weight:400;margin-top:2px">Summary · Key findings · Red flags</span>
     </button>
     <button class="mbtn mbtn-p" onclick="openFullReport()" style="background:#1a4f6e">
       📄 Full Report <span style="font-size:0.72rem;opacity:.75;display:block;font-weight:400;margin-top:2px">Complete questionnaire answers</span>
     </button>
-    <button class="mbtn mbtn-p" onclick="exportJSON()" style="background:#4d5a27">
-      💾 Save to Database <span style="font-size:0.72rem;opacity:.75;display:block;font-weight:400;margin-top:2px">Export raw data as JSON file</span>
-    </button>
-    <button class="mbtn mbtn-s" onclick="closeFinish()">Later</button>`;
-  m.classList.add('open');
+    <button class="mbtn mbtn-s" onclick="closeFinish()">Close</button>`;
+}
+
+async function retryFinishSync(){
+  if(!recId){ showToast('No active record',true); return; }
+  const m=document.getElementById('finModal');
+  m.querySelector('.modal-icon').textContent='⏳';
+  m.querySelector('.modal-title').textContent='Retrying Upload…';
+  m.querySelector('.modal-body').textContent='Connecting to admin dashboard…';
+  m.querySelector('.modal-btns').innerHTML='';
+  const stored=JSON.parse(localStorage.getItem('chsa4')||'{}');
+  const rec=stored[recId];
+  if(!rec){ showToast('Record not found',true); closeFinish(); return; }
+  setSyncStatus('syncing');
+  const result = await syncRecord({...rec, _id:recId});
+  if(result.ok){
+    m.querySelector('.modal-icon').textContent='🎉';
+    m.querySelector('.modal-title').textContent='Upload Successful!';
+    m.querySelector('.modal-body').innerHTML='<span style="color:#1e5c38;font-weight:700">✓ Record is now on the admin dashboard.</span>';
+    m.querySelector('.modal-btns').innerHTML=`
+      <button class="mbtn mbtn-p" onclick="openBriefReport()" style="background:#1e5c38">📋 Brief Report</button>
+      <button class="mbtn mbtn-s" onclick="closeFinish()">Close</button>`;
+    setSyncStatus('ok');
+  } else {
+    m.querySelector('.modal-icon').textContent='⚠️';
+    m.querySelector('.modal-title').textContent='Upload Failed Again';
+    m.querySelector('.modal-body').innerHTML='<span style="color:#d32f2f;font-weight:700">✗ Still could not upload.</span><br><small style="color:#888">'+result.err+'</small><br><br>Record is saved locally. Try again when you have a stronger connection.';
+    m.querySelector('.modal-btns').innerHTML=`
+      <button class="mbtn" style="background:#1a4f6e;color:#fff" onclick="retryFinishSync()">🔄 Retry Again</button>
+      <button class="mbtn mbtn-s" onclick="closeFinish()">Close</button>`;
+    setSyncStatus('error');
+  }
 }
 function closeFinish(){document.getElementById('finModal').classList.remove('open');}
 
@@ -1333,7 +1429,7 @@ function buildBriefReport(r){
   if(r.b_animals==='Yes') concerns.push('Household shares living space with domestic animals');
   if(r.b_smoke==='Yes'&&r.b_smoke_in==='Yes') flags.push('Smoking inside the house — health risk to household members');
   if(r.g_latrine==='No') flags.push('No pit latrine — open defecation risk');
-  if((r.h_wld==='0–5 m'||r.h_wld==='5–10 m')&&r.h_protected==='No') flags.push('Water source very close to latrine AND unprotected — HIGH contamination risk');
+  if((r.h_wld==='0–5 m'||r.h_wld==='5–10 m')&&r.h_wprot==='No') flags.push('Water source very close to latrine AND unprotected — HIGH contamination risk');
   if(r.h_treat==='No') concerns.push('Water not treated before drinking');
   if(r.f_heard==='No') flags.push('Respondent has NEVER heard of HIV/AIDS — needs health education');
   if(r.c_preg==='Yes'&&r.a_gender==='Male') flags.push('Data inconsistency: Male respondent recorded as pregnant');
@@ -1599,13 +1695,8 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f5f5f5;color:#1a2b22
 // ══════════════════════════════════════════════════════
 document.addEventListener('change',e=>{
   if(!e.target.matches('input,select,textarea')) return;
-  if(recId){
-    const d={},el=e.target;
-    if(el.type==='radio'||el.type==='checkbox'){if(el.checked)d[el.name]=el.value;}
-    else if(el.value)d[el.name]=el.value;
-    if(el.name) pRec(d);
-  }
-  // Run integrity rules after every change
+  // Always do a full collectAll save — guarantees arrays for checkboxes are correct
+  if(recId) saveCur();
   setTimeout(runAllRules, 50);
 });
 
@@ -1694,7 +1785,7 @@ function bSecB(){return sec('Section B','Housing',`
 ${fg(q('B1','Type of House (Observe)','req')+chips(radio('b_type','Permanent','Permanent')+radio('b_type','Semi-permanent','Semi-permanent')+radio('b_type','Temporary','Temporary')))}
 ${fg(q('B2','Roofing Material')+chips(radio('b_roof','Iron Sheets','Iron Sheets')+radio('b_roof','Grass Thatched','Grass Thatched')+radio('b_roof','Tiles','Tiles')+radio('b_roof','Other','Other')))}
 ${fg(q('B3','Number of Windows')+chips(radio('b_win','None','None')+radio('b_win','1–3','1–3')+radio('b_win','4','4')+radio('b_win','More than 4','>4')))}
-${fg(q('B4','Ventilation (Observe)')+chips(radio('b_vent','Good','Good')+radio('b_vent','Poor','Poor'))+ti('b_vent_note','Observer comments...'))}
+${fg(q('B4','Ventilation (Observe)')+chips(radio('b_ventil','Good','Good')+radio('b_ventil','Poor','Poor'))+ti('b_vent_note','Observer comments...'))}
 ${fg(q('B5','Number of Bedrooms')+chips(radio('b_rooms','1','1')+radio('b_rooms','2','2')+radio('b_rooms','3','3')+radio('b_rooms','More than 3','>3')))}
 ${fg(q('B6','Separate Bedrooms for Children?')+chips(radio('b_sep','Yes','Yes')+radio('b_sep','No','No')))}
 ${fg(q('B7','People Per Bedroom')+chips(radio('b_proom','1','1')+radio('b_proom','2–3','2–3')+radio('b_proom','4','4')+radio('b_proom','More than 4','>4')))}
@@ -2158,23 +2249,7 @@ setTimeout(()=>{
 }
 </style>
 
-<!-- SYNC SETUP MODAL -->
-<div id="syncSetupModal" style="display:none;position:fixed;inset:0;z-index:600;background:rgba(0,0,0,.55);align-items:flex-end;justify-content:center;">
-  <div style="background:#fff;width:100%;max-width:480px;border-radius:20px 20px 0 0;padding:24px 20px calc(24px + env(safe-area-inset-bottom));">
-    <div style="text-align:center;margin-bottom:18px">
-      <div style="font-size:36px;margin-bottom:8px">☁</div>
-      <div style="font-size:1.1rem;font-weight:700;color:#1e5c38">Sync to Admin Database</div>
-      <div style="font-size:0.8rem;color:#6b8a74;margin-top:4px;line-height:1.5">Your admin/teacher will give you a URL and Key. Enter them here once and your data will sync automatically when online.</div>
-    </div>
-    <div id="sync-status-box" style="display:none;background:#e8f5ed;border:1px solid #cce0d4;border-radius:8px;padding:10px 12px;margin-bottom:14px;font-size:0.8rem;color:#1e5c38;font-weight:600"></div>
-    <label style="font-size:0.72rem;font-weight:700;color:#6b8a74;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px">Supabase URL (from admin)</label>
-    <input id="sync-url-input" class="form-input" type="url" placeholder="https://xxxx.supabase.co" style="margin-bottom:10px">
-    <label style="font-size:0.72rem;font-weight:700;color:#6b8a74;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px">API Key (from admin)</label>
-    <input id="sync-key-input" class="form-input" type="text" placeholder="eyJhbGci..." style="margin-bottom:14px">
-    <button onclick="saveSyncConfig()" style="width:100%;padding:13px;background:#1e5c38;color:#fff;border:none;border-radius:10px;font-family:inherit;font-size:0.95rem;font-weight:700;cursor:pointer;margin-bottom:8px">Save & Sync Now</button>
-    <button onclick="document.getElementById('syncSetupModal').style.display='none'" style="width:100%;padding:11px;background:#f9f7f4;color:#6b8a74;border:1.5px solid #cce0d4;border-radius:10px;font-family:inherit;font-size:0.88rem;font-weight:600;cursor:pointer">Close</button>
-  </div>
-</div>
+<!-- Sync is automatic — no modal needed for students -->
 
 <script>
 // Service worker loaded from ./sw.js
@@ -2266,28 +2341,25 @@ function showInstallGuide() {
   if(modal) modal.style.display = 'flex';
 }
 
-function showSyncSetup(){
-  const modal=document.getElementById('syncSetupModal');
-  const urlEl=document.getElementById('sync-url-input');
-  const keyEl=document.getElementById('sync-key-input');
-  const box=document.getElementById('sync-status-box');
-  if(urlEl) urlEl.value=localStorage.getItem('chsa_sb_url')||'';
-  if(keyEl) keyEl.value=localStorage.getItem('chsa_sb_key')||'';
-  if(box){
-    if(isSyncConfigured()){ box.style.display='block'; box.textContent='✓ Sync is configured — '+allRecords?Object.keys(JSON.parse(localStorage.getItem('chsa4')||'{}')).length+' local records':''; }
-    else { box.style.display='none'; }
-  }
-  if(modal) modal.style.display='flex';
+// Sync is auto — no manual config needed
+
+// ── Sync modal helpers ──
+function openSyncModal(){
+  const stored = JSON.parse(localStorage.getItem('chsa4')||'{}');
+  const all = Object.entries(stored).filter(([id,r])=> typeof r==='object' && r!==null && !id.startsWith('_'));
+  const confirmed = all.filter(([,r])=>r._synced===true);
+  const pending   = all.filter(([,r])=>!r._synced);
+  document.getElementById('syncModalStatus').textContent =
+    navigator.onLine ? '🟢 Online — ready to sync' : '🔴 Offline — connect to sync';
+  document.getElementById('syncModalInfo').innerHTML =
+    `<strong>${all.length}</strong> total record(s) on this device<br>` +
+    `<span style="color:#1e5c38;font-weight:600">✓ ${confirmed.length} confirmed uploaded to admin</span><br>` +
+    `<span style="color:${pending.length>0?'#d35400':'#1e5c38'};font-weight:600">`+
+    `${pending.length>0?'⚠ '+pending.length+' NOT yet uploaded — tap Sync below':'✓ All uploaded'}</span>`;
+  document.getElementById('syncModal').style.display='flex';
 }
-function saveSyncConfig(){
-  const url=(document.getElementById('sync-url-input')?.value||'').trim();
-  const key=(document.getElementById('sync-key-input')?.value||'').trim();
-  if(!url||!key){ showToast('Please enter both URL and Key',true); return; }
-  localStorage.setItem('chsa_sb_url',url);
-  localStorage.setItem('chsa_sb_key',key);
-  document.getElementById('syncSetupModal').style.display='none';
-  showToast('✓ Sync configured! Syncing now...');
-  setTimeout(syncAll, 500);
+function closeSyncModal(){
+  document.getElementById('syncModal').style.display='none';
 }
 
 // Auto-show iOS hint after 4 seconds if not installed
@@ -2305,146 +2377,250 @@ if (isIOS && !isStandalone) {
 <script>
 // ══════════════════════════════════════════════════════
 //  SUPABASE CONFIG
-//  Students: leave this as-is — admin will configure it
-//  Admin: replace SUPABASE_URL and SUPABASE_KEY below
-//  after setting up the free Supabase project
 // ══════════════════════════════════════════════════════
-const SUPABASE_URL = localStorage.getItem('chsa_sb_url') || '';
-const SUPABASE_KEY = localStorage.getItem('chsa_sb_key') || '';
+const SUPABASE_URL = 'https://tftbysxozanxauxuuptw.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRmdGJ5c3hvemFueGF1eHV1cHR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM5OTgzNzQsImV4cCI6MjA4OTU3NDM3NH0.xipP0OctBF7SwhFUwGJ7D8APVmSlmA0Qyvv5-_5J6Co';
 const SYNC_TABLE   = 'health_survey_records';
+// IMPORTANT: _synced flag is ONLY set after Supabase confirms the write.
+// It is NEVER set optimistically. If it is not set, syncAll will retry.
 
-// ── Sync status indicator in topbar ──
-function setSyncStatus(status){
-  // status: 'idle' | 'syncing' | 'ok' | 'offline' | 'error'
-  let el = document.getElementById('sync-dot');
-  if(!el){
-    el = document.createElement('span');
-    el.id = 'sync-dot';
-    el.style.cssText = 'width:8px;height:8px;border-radius:50%;display:inline-block;margin-left:4px;flex-shrink:0;transition:background .4s';
-    const tb = document.querySelector('.tb-left');
-    if(tb) tb.appendChild(el);
+// ── Sync button state ──
+let _syncBusy = false;
+
+function setSyncStatus(status, detail){
+  const btn = document.getElementById('sync-btn');
+  const dot = document.getElementById('sync-dot');
+  const lbl = document.getElementById('sync-lbl');
+  const colors = {idle:'rgba(255,255,255,.25)',syncing:'#f39c12',ok:'#4CAF72',offline:'rgba(255,255,255,.15)',error:'#e74c3c'};
+  const labels = {idle:'Sync',syncing:'Syncing…',ok:'Synced ✓',offline:'Offline',error:'Sync Failed'};
+  if(dot) dot.style.background = colors[status]||colors.idle;
+  if(lbl) lbl.textContent = labels[status]||'Sync';
+  if(btn){
+    btn.disabled = (status === 'syncing');
+    btn.style.opacity = (status === 'syncing') ? '0.65' : '1';
   }
-  const colors = {idle:'rgba(255,255,255,.3)',syncing:'#f39c12',ok:'#4CAF72',offline:'rgba(255,255,255,.2)',error:'#e74c3c'};
-  el.style.background = colors[status]||colors.idle;
-  el.title = {idle:'Not synced',syncing:'Syncing...',ok:'Synced ✓',offline:'Offline',error:'Sync error'}[status]||'';
+  if(detail) console.warn('[Sync]', status, detail);
 }
 
-// ── Check if Supabase is configured ──
 function isSyncConfigured(){
-  const url = localStorage.getItem('chsa_sb_url')||'';
-  const key = localStorage.getItem('chsa_sb_key')||'';
-  return url.startsWith('https://') && key.length > 10;
+  return SUPABASE_URL.startsWith('https://') && SUPABASE_KEY.length > 10;
 }
 
-// ── Upload one record to Supabase ──
+// ── Build the flat payload from a raw record ──
+function buildPayload(recData){
+  return {
+    record_id:         recData._id || recData.record_id || ('R'+Date.now()),
+    interviewer:       recData.interviewer_name || localStorage.getItem('chsa_user_name') || 'Unknown',
+    interview_date:    recData.interview_date   || new Date().toISOString().split('T')[0],
+    location:          (recData.interview_location === '__other__'
+                          ? recData.interview_location_custom
+                          : recData.interview_location)
+                       || recData.interview_location_custom
+                       || 'Nyamache Sub County Hospital',
+    respondent_age:    parseInt(recData.a_age)  || null,
+    respondent_gender: recData.a_gender         || '',
+    house_type:        recData.b_type           || '',
+    water_source:      [].concat(recData.h_wsrc || []).join(', '),
+    water_treated:     recData.h_treat          || '',
+    latrine:           recData.g_latrine        || '',
+    hiv_heard:         recData.f_heard          || '',
+    hiv_tested:        recData.f_tested         || '',
+    illnesses:         [].concat(recData.c_ill  || []).join(', '),
+    deaths_5yr:        recData.c_deaths         || '',
+    deaths_count:      parseInt(recData.c_deaths_n) || 0,
+    fuel:              recData.b_fuel           || '',
+    education:         recData.a_edu            || '',
+    occupation:        recData.a_occ            || '',
+    consent:           recData.consent_given    || '',
+    synced_at:         new Date().toISOString(),
+    raw_json:          JSON.stringify(recData),
+  };
+}
+
+// ── Upload ONE record ──
+// Strategy: always POST first. If 409 duplicate, fall back to PATCH update.
 async function syncRecord(recData){
-  if(!isSyncConfigured()) return false;
-  if(!navigator.onLine){ setSyncStatus('offline'); return false; }
-  const url = localStorage.getItem('chsa_sb_url');
-  const key = localStorage.getItem('chsa_sb_key');
-  setSyncStatus('syncing');
+  if(!isSyncConfigured()) return {ok:false, err:'Not configured'};
+  if(!navigator.onLine) return {ok:false, err:'Offline'};
   try {
-    // Build a clean flat record for the database
-    const payload = {
-      record_id:    recData._id || ('R'+Date.now()),
-      interviewer:  recData.interviewer_name || localStorage.getItem('chsa_user_name') || 'Unknown',
-      interview_date: recData.interview_date || new Date().toISOString().split('T')[0],
-      location:     recData.interview_location || recData.interview_location_custom || '',
-      respondent_age:    parseInt(recData.a_age)||null,
-      respondent_gender: recData.a_gender||'',
-      house_type:   recData.b_type||'',
-      water_source: [].concat(recData.h_wsrc||[]).join(', '),
-      water_treated: recData.h_treat||'',
-      latrine:      recData.g_latrine||'',
-      hiv_heard:    recData.f_heard||'',
-      hiv_tested:   recData.f_tested||'',
-      illnesses:    [].concat(recData.c_ill||[]).join(', '),
-      deaths_5yr:   recData.c_deaths||'',
-      deaths_count: parseInt(recData.c_deaths_n)||0,
-      fuel:         recData.b_fuel||'',
-      education:    recData.a_edu||'',
-      occupation:   recData.a_occ||'',
-      consent:      recData.consent_given||'',
-      synced_at:    new Date().toISOString(),
-      raw_json:     JSON.stringify(recData),   // full record for admin
+    const payload = buildPayload(recData);
+    const rid = encodeURIComponent(payload.record_id);
+    const baseHeaders = {
+      'Content-Type':  'application/json',
+      'apikey':        SUPABASE_KEY,
+      'Authorization': 'Bearer ' + SUPABASE_KEY,
+      'Prefer':        'return=minimal',
     };
-    const res = await fetch(`${url}/rest/v1/${SYNC_TABLE}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type':  'application/json',
-        'apikey':        key,
-        'Authorization': 'Bearer ' + key,
-        'Prefer':        'resolution=merge-duplicates',
-      },
-      body: JSON.stringify(payload),
-    });
-    if(res.ok || res.status===201 || res.status===200){
-      setSyncStatus('ok');
-      // Mark as synced locally
-      if(recData._id) {
-        const stored = JSON.parse(localStorage.getItem('chsa4')||'{}');
-        if(stored[recData._id]){ stored[recData._id]._synced=true; localStorage.setItem('chsa4',JSON.stringify(stored)); }
-      }
-      return true;
-    } else {
-      const err = await res.text();
-      console.warn('Sync failed:', res.status, err);
-      setSyncStatus('error');
-      return false;
+
+    console.log('[Sync] Attempting POST for record_id:', payload.record_id);
+
+    // Step 1: Try POST (insert new row)
+    const post = await fetch(
+      `${SUPABASE_URL}/rest/v1/${SYNC_TABLE}`,
+      { method:'POST', headers:baseHeaders, body:JSON.stringify(payload) }
+    );
+
+    console.log('[Sync] POST status:', post.status);
+
+    if(post.status === 200 || post.status === 201 || post.status === 204){
+      // INSERT confirmed by Supabase — mark synced NOW
+      markSynced(recData, true);
+      return {ok:true};
     }
+
+    if(post.status === 409){
+      // Row already exists — update it with PATCH
+      console.log('[Sync] 409 duplicate — trying PATCH update');
+      const patch = await fetch(
+        `${SUPABASE_URL}/rest/v1/${SYNC_TABLE}?record_id=eq.${rid}`,
+        { method:'PATCH', headers:baseHeaders, body:JSON.stringify(payload) }
+      );
+      console.log('[Sync] PATCH status:', patch.status);
+      if(patch.status === 200 || patch.status === 204 || patch.status === 201){
+        // UPDATE confirmed by Supabase — mark synced NOW
+        markSynced(recData, true);
+        return {ok:true};
+      } else {
+        const body = await patch.text();
+        markSynced(recData, false); // ensure not falsely marked
+        return {ok:false, err:`PATCH failed ${patch.status}: ${body.slice(0,120)}`};
+      }
+    }
+
+    // Any other error from POST — do NOT mark synced
+    const body = await post.text();
+    console.warn('[Sync] POST error:', post.status, body);
+    markSynced(recData, false);
+    return {ok:false, err:`HTTP ${post.status}: ${body.slice(0,120)}`};
+
   } catch(e){
-    console.warn('Sync error:', e);
-    setSyncStatus(navigator.onLine?'error':'offline');
-    return false;
+    console.error('[Sync] Exception:', e);
+    markSynced(recData, false);
+    return {ok:false, err: e.message};
   }
 }
 
-// ── Sync all unsynced records ──
-async function syncAll(){
-  if(!isSyncConfigured()){ showToast('Sync not configured — see admin',true); return; }
+function markSynced(recData, success){
   const stored = JSON.parse(localStorage.getItem('chsa4')||'{}');
-  const unsynced = Object.entries(stored).filter(([id,r])=>!r._synced && r.consent_given==='Yes');
-  if(!unsynced.length){ showToast('All records already synced ✓'); return; }
-  showToast(`Syncing ${unsynced.length} record(s)...`);
-  let ok=0, fail=0;
-  for(const [id,rec] of unsynced){
-    const result = await syncRecord({...rec, _id:id});
-    if(result) ok++; else fail++;
+  const id = recData._id || recData.record_id;
+  if(id && stored[id]){
+    if(success){
+      stored[id]._synced    = true;
+      stored[id]._synced_at = new Date().toISOString();
+    } else {
+      // Make sure failed records are NOT marked synced so they retry
+      stored[id]._synced = false;
+    }
+    localStorage.setItem('chsa4', JSON.stringify(stored));
   }
-  showToast(fail>0 ? `⚠ ${ok} synced, ${fail} failed` : `✓ ${ok} record(s) synced!`, fail>0);
 }
 
-// ── Auto-sync when coming online ──
-window.addEventListener('online', ()=>{
-  setSyncStatus('idle');
-  setTimeout(syncAll, 2000);
-});
-window.addEventListener('offline', ()=> setSyncStatus('offline'));
-
-// ── Sync button in topbar ──
-setTimeout(()=>{
-  const tb = document.querySelector('.tb-left');
-  if(!tb) return;
-  if(isSyncConfigured()){
-    const btn = document.createElement('button');
-    btn.className = 'tb-rec';
-    btn.style.cssText = 'background:rgba(255,255,255,.12);padding:7px 10px;font-size:0.75rem';
-    btn.title = 'Sync data to server';
-    btn.innerHTML = '☁';
-    btn.onclick = syncAll;
-    document.querySelector('.tb-left')?.parentElement?.querySelector('div[style]')?.prepend(btn);
+// ── Sync unsynced records only ──
+async function syncAll(){
+  if(_syncBusy) return;
+  if(!isSyncConfigured()){ showToast('⚠ Sync not configured', true); return; }
+  if(!navigator.onLine){ setSyncStatus('offline'); showToast('⚠ No internet connection', true); return; }
+  _syncBusy = true;
+  setSyncStatus('syncing');
+  const stored = JSON.parse(localStorage.getItem('chsa4')||'{}');
+  const pending = Object.entries(stored).filter(([id,r])=>
+    typeof r === 'object' && r !== null && !id.startsWith('_') && !r._synced
+  );
+  if(!pending.length){
+    setSyncStatus('ok');
+    showToast('✓ All records already synced');
+    _syncBusy = false;
+    return;
   }
-  setSyncStatus(navigator.onLine?'idle':'offline');
-}, 1000);
-
-// ── Sync after saving a record ──
-const _origSaveCur = saveCur;
-// Hook into save to auto-sync
-document.addEventListener('chsa:saved', e=>{
-  if(isSyncConfigured() && navigator.onLine && e.detail){
-    syncRecord(e.detail).catch(()=>{});
+  showToast('Uploading '+pending.length+' record(s)…');
+  let ok=0, fail=0, lastErr='';
+  for(const [id, rec] of pending){
+    const result = await syncRecord({...rec, _id:id});
+    if(result.ok) ok++;
+    else { fail++; lastErr = result.err; }
   }
+  _syncBusy = false;
+  if(fail > 0){
+    setSyncStatus('error', lastErr);
+    showToast(`⚠ ${ok} synced, ${fail} failed — tap Sync to retry`, true);
+  } else {
+    setSyncStatus('ok');
+    showToast(`✓ ${ok} record(s) synced to admin!`);
+  }
+}
+
+// ── FORCE SYNC — pushes ALL records regardless of _synced flag ──
+async function forceSyncAll(){
+  if(_syncBusy) return;
+  if(!isSyncConfigured()){ showToast('⚠ Sync not configured', true); return; }
+  if(!navigator.onLine){ setSyncStatus('offline'); showToast('⚠ No internet connection', true); return; }
+  _syncBusy = true;
+  setSyncStatus('syncing');
+  // First reset all _synced flags so everything is re-pushed
+  const stored = JSON.parse(localStorage.getItem('chsa4')||'{}');
+  const all = Object.entries(stored).filter(([id,r])=>
+    typeof r === 'object' && r !== null && !id.startsWith('_')
+  );
+  if(!all.length){
+    setSyncStatus('ok');
+    showToast('No records to sync', true);
+    _syncBusy = false;
+    return;
+  }
+  showToast('Force pushing '+all.length+' record(s)…');
+  let ok=0, fail=0, lastErr='';
+  for(const [id, rec] of all){
+    // Clear synced flag so syncRecord marks it fresh
+    const result = await syncRecord({...rec, _id:id, _synced:false});
+    if(result.ok) ok++;
+    else { fail++; lastErr = result.err; }
+  }
+  _syncBusy = false;
+  if(fail > 0){
+    setSyncStatus('error', lastErr);
+    showToast(`⚠ ${ok} pushed, ${fail} failed: ${lastErr.slice(0,60)}`, true);
+  } else {
+    setSyncStatus('ok');
+    showToast(`✓ Force pushed ${ok} record(s) to admin!`);
+  }
+}
+
+// ── Auto sync on page load ──
+window.addEventListener('load', ()=>{
+  setTimeout(()=>{
+    setSyncStatus(navigator.onLine ? 'idle' : 'offline');
+    if(navigator.onLine && isSyncConfigured()) syncAll();
+  }, 2500);
 });
+
+// ── Auto sync when coming back online ──
+window.addEventListener('online',  ()=>{ setSyncStatus('idle'); setTimeout(syncAll, 1500); });
+window.addEventListener('offline', ()=>{ setSyncStatus('offline'); showToast('⚠ Gone offline — data saved locally', true); });
+
+// nextSec now syncs inline — no patch needed here
 </script>
+
+<!-- ── Sync Modal (force sync details) ── -->
+<div id="syncModal" style="display:none;position:fixed;inset:0;z-index:600;background:rgba(0,0,0,.5);align-items:flex-end;justify-content:center;">
+  <div style="background:#fff;width:100%;max-width:480px;border-radius:20px 20px 0 0;padding:24px 20px calc(24px + env(safe-area-inset-bottom))">
+    <div style="text-align:center;margin-bottom:18px">
+      <div style="font-size:36px;margin-bottom:7px">☁️</div>
+      <div style="font-size:1.05rem;font-weight:800;color:#1e5c38;margin-bottom:4px">Sync Records</div>
+      <div style="font-size:0.78rem;color:#6b8a74;line-height:1.5" id="syncModalStatus">Checking records…</div>
+    </div>
+    <div style="background:#f0f4f8;border-radius:10px;padding:13px 15px;margin-bottom:14px;font-size:0.8rem;color:#1a2535;line-height:1.7" id="syncModalInfo">—</div>
+    <div style="display:flex;flex-direction:column;gap:9px">
+      <button onclick="closeSyncModal();syncAll();" style="padding:13px;background:#1e5c38;color:#fff;border:none;border-radius:10px;font-family:inherit;font-size:0.92rem;font-weight:700;cursor:pointer">
+        ☁ Sync Unsynced Records
+      </button>
+      <button onclick="closeSyncModal();forceSyncAll();" style="padding:13px;background:#1a4f6e;color:#fff;border:none;border-radius:10px;font-family:inherit;font-size:0.92rem;font-weight:700;cursor:pointer">
+        🔄 Force Push ALL Records
+        <span style="display:block;font-size:0.7rem;font-weight:400;opacity:.75;margin-top:1px">Re-uploads everything — use if admin is missing data</span>
+      </button>
+      <button onclick="closeSyncModal()" style="padding:13px;background:#f0f4f8;color:#5d7a8a;border:1.5px solid #dde8f0;border-radius:10px;font-family:inherit;font-size:0.88rem;font-weight:600;cursor:pointer">Cancel</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
