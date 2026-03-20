@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>How to Install Health Survey App</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:#f9f7f4;color:#1a2b22;padding:20px;max-width:600px;margin:0 auto;}
+h1{color:#1e5c38;font-size:1.4rem;margin-bottom:4px;}
+.sub{color:#6b8a74;font-size:0.85rem;margin-bottom:28px;}
+.card{background:#fff;border:1px solid #cce0d4;border-radius:14px;padding:20px;margin-bottom:16px;}
+.card-title{font-size:0.95rem;font-weight:700;color:#1e5c38;margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+.step{display:flex;gap:12px;align-items:flex-start;margin-bottom:12px;padding:10px;background:#f9f7f4;border-radius:10px;}
+.step:last-child{margin-bottom:0;}
+.num{width:28px;height:28px;border-radius:50%;background:#1e5c38;color:#fff;font-weight:700;font-size:0.82rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.step-body strong{display:block;font-size:0.88rem;margin-bottom:2px;}
+.step-body span{font-size:0.78rem;color:#6b8a74;line-height:1.4;}
+.url-box{background:#1e5c38;color:#a8d8b8;padding:10px 14px;border-radius:8px;font-family:monospace;font-size:0.82rem;word-break:break-all;margin:8px 0;}
+.badge{display:inline-block;padding:4px 10px;border-radius:99px;font-size:0.72rem;font-weight:700;}
+.badge-green{background:#e8f5ed;color:#1e5c38;}
+.badge-blue{background:#e3f2fd;color:#1565c0;}
+.note{background:#fff8e1;border:1px solid #ffcc80;border-radius:8px;padding:10px 12px;font-size:0.78rem;color:#e65100;margin-top:8px;line-height:1.5;}
+.files{background:#1a2b22;color:#a8d8b8;padding:14px;border-radius:8px;font-family:monospace;font-size:0.8rem;line-height:1.8;}
+.files .f{color:#fff;}
+.files .c{color:#4CAF72;}
+hr{border:none;border-top:1px solid #cce0d4;margin:20px 0;}
+.sig{text-align:center;color:#6b8a74;font-size:0.75rem;padding:16px 0;}
+</style>
+</head>
+<body>
+
+<h1>📲 Install Health Survey as a Phone App</h1>
+<p class="sub">Step-by-step guide — Free GitHub hosting in under 10 minutes</p>
+
+<!-- WHAT YOU NEED -->
+<div class="card">
+  <div class="card-title">📦 Files in this package</div>
+  <div class="files">
+    <div><span class="f">index.html</span>  <span class="c">← The full survey app</span></div>
+    <div><span class="f">manifest.json</span> <span class="c">← PWA config</span></div>
+    <div><span class="f">sw.js</span>         <span class="c">← Offline service worker</span></div>
+    <div><span class="f">icon-192.png</span>  <span class="c">← App icon</span></div>
+    <div><span class="f">icon-512.png</span>  <span class="c">← App icon (large)</span></div>
+    <div><span class="f">SETUP_GUIDE.html</span> <span class="c">← This file</span></div>
+  </div>
+  <p class="note">⚠ Keep ALL files in the same folder. Do not rename them.</p>
+</div>
+
+<!-- STEP 1: GITHUB ACCOUNT -->
+<div class="card">
+  <div class="card-title">1️⃣ Create a Free GitHub Account</div>
+  <div class="step">
+    <div class="num">1</div>
+    <div class="step-body">
+      <strong>Go to github.com on your phone or computer</strong>
+      <span>Tap "Sign up" — it's completely free</span>
+    </div>
+  </div>
+  <div class="step">
+    <div class="num">2</div>
+    <div class="step-body">
+      <strong>Choose a username</strong>
+      <span>Example: <code>hazzinbr</code> — this becomes part of your app's web address</span>
+    </div>
+  </div>
+  <div class="step">
+    <div class="num">3</div>
+    <div class="step-body">
+      <strong>Verify your email</strong>
+      <span>GitHub will send a confirmation email — click the link</span>
+    </div>
+  </div>
+</div>
+
+<!-- STEP 2: CREATE REPO -->
+<div class="card">
+  <div class="card-title">2️⃣ Create a New Repository</div>
+  <div class="step">
+    <div class="num">1</div>
+    <div class="step-body">
+      <strong>Click the "+" button → "New repository"</strong>
+      <span>Top right corner of GitHub</span>
+    </div>
+  </div>
+  <div class="step">
+    <div class="num">2</div>
+    <div class="step-body">
+      <strong>Name it exactly: <code style="background:#f0f0f0;padding:2px 6px;border-radius:4px">health-survey</code></strong>
+      <span>This name becomes your URL</span>
+    </div>
+  </div>
+  <div class="step">
+    <div class="num">3</div>
+    <div class="step-body">
+      <strong>Set to Public</strong>
+      <span>Must be Public for free GitHub Pages hosting</span>
+    </div>
+  </div>
+  <div class="step">
+    <div class="num">4</div>
+    <div class="step-body">
+      <strong>Leave everything else default → Click "Create repository"</strong>
+      <span>Do NOT tick "Add README"</span>
+    </div>
+  </div>
+</div>
+
+<!-- STEP 3: UPLOAD FILES -->
+<div class="card">
+  <div class="card-title">3️⃣ Upload All 5 Files</div>
+  <div class="step">
+    <div class="num">1</div>
+    <div class="step-body">
+      <strong>On the empty repo page, click "uploading an existing file"</strong>
+      <span>Or drag and drop the files directly</span>
+    </div>
+  </div>
+  <div class="step">
+    <div class="num">2</div>
+    <div class="step-body">
+      <strong>Upload ALL 5 files at once</strong>
+      <span>index.html · manifest.json · sw.js · icon-192.png · icon-512.png</span>
+    </div>
+  </div>
+  <div class="step">
+    <div class="num">3</div>
+    <div class="step-body">
+      <strong>Scroll down → Click "Commit changes"</strong>
+      <span>The green button at the bottom of the page</span>
+    </div>
+  </div>
+</div>
+
+<!-- STEP 4: ENABLE GITHUB PAGES -->
+<div class="card">
+  <div class="card-title">4️⃣ Turn On GitHub Pages (Free Hosting)</div>
+  <div class="step">
+    <div class="num">1</div>
+    <div class="step-body">
+      <strong>Go to your repository → Click "Settings"</strong>
+      <span>Settings tab is near the top of the repo</span>
+    </div>
+  </div>
+  <div class="step">
+    <div class="num">2</div>
+    <div class="step-body">
+      <strong>Scroll down to "Pages" in the left sidebar</strong>
+      <span>Under "Code and automation"</span>
+    </div>
+  </div>
+  <div class="step">
+    <div class="num">3</div>
+    <div class="step-body">
+      <strong>Under "Branch" — select "main" → Click Save</strong>
+      <span>Leave the folder as / (root)</span>
+    </div>
+  </div>
+  <div class="step">
+    <div class="num">4</div>
+    <div class="step-body">
+      <strong>Wait 1–2 minutes, then your app is live at:</strong>
+      <div class="url-box">https://YOUR-USERNAME.github.io/health-survey/</div>
+      <span>Replace YOUR-USERNAME with your actual GitHub username</span>
+    </div>
+  </div>
+</div>
+
+<!-- STEP 5: INSTALL ON PHONE -->
+<div class="card">
+  <div class="card-title">5️⃣ Install App on Android Phone</div>
+  <div class="step">
+    <div class="num">1</div>
+    <div class="step-body">
+      <strong>Open Chrome on your Android phone</strong>
+      <span>Must be Chrome — not Samsung browser or Firefox</span>
+    </div>
+  </div>
+  <div class="step">
+    <div class="num">2</div>
+    <div class="step-body">
+      <strong>Go to your app URL</strong>
+      <div class="url-box">https://YOUR-USERNAME.github.io/health-survey/</div>
+    </div>
+  </div>
+  <div class="step">
+    <div class="num">3</div>
+    <div class="step-body">
+      <strong>A banner will pop up: "Add Health Survey to Home screen"</strong>
+      <span>Tap "Install" or "Add" — Chrome shows this automatically on HTTPS</span>
+    </div>
+  </div>
+  <div class="step">
+    <div class="num">4</div>
+    <div class="step-body">
+      <strong>If no banner: tap ⋮ (three dots) → "Add to Home screen"</strong>
+      <span>Or tap the install icon ⊕ in the address bar</span>
+    </div>
+  </div>
+  <div class="step">
+    <div class="num">5</div>
+    <div class="step-body">
+      <strong>✓ Done! The app opens like a native app — no browser bar</strong>
+      <span>Works fully offline after first load. Data saved on phone only.</span>
+    </div>
+  </div>
+</div>
+
+<!-- iPhone -->
+<div class="card">
+  <div class="card-title">🍎 Install on iPhone</div>
+  <div class="step">
+    <div class="num">1</div>
+    <div class="step-body">
+      <strong>Open in Safari (not Chrome)</strong>
+      <span>iPhone PWA install only works in Safari</span>
+    </div>
+  </div>
+  <div class="step">
+    <div class="num">2</div>
+    <div class="step-body">
+      <strong>Tap the Share icon ⬆ at the bottom</strong>
+    </div>
+  </div>
+  <div class="step">
+    <div class="num">3</div>
+    <div class="step-body">
+      <strong>Scroll down → tap "Add to Home Screen"</strong>
+    </div>
+  </div>
+  <div class="step">
+    <div class="num">4</div>
+    <div class="step-body">
+      <strong>Tap "Add" → App icon appears on home screen</strong>
+    </div>
+  </div>
+</div>
+
+<!-- SHARE WITH TEAM -->
+<div class="card">
+  <div class="card-title">📤 Share with Your Team</div>
+  <p style="font-size:0.85rem;color:#6b8a74;margin-bottom:12px">Once hosted, share your URL with all interviewers via WhatsApp:</p>
+  <div class="url-box">https://YOUR-USERNAME.github.io/health-survey/</div>
+  <p style="font-size:0.78rem;color:#6b8a74;margin-top:8px">Everyone on the team can install it on their own phone from the same link. Each phone stores its own data separately (offline).</p>
+</div>
+
+<hr>
+<div class="sig">
+  Built by <strong>HazzinBR</strong> · Community Health Situation Analysis Tool<br>
+  Free to use · No copyright restrictions
+</div>
+
+</body>
+</html>
