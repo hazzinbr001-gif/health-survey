@@ -457,7 +457,6 @@ const REQS={
   0:[['consent_given','radio','Respondent Consent'],['interviewer_name','text','Interviewer Name'],['interview_date','text','Interview Date']],
   1:[['a_age','text','Age of Respondent'],['a_gender','radio','Gender'],['a_tot_m','text','Total Males'],['a_tot_f','text','Total Females']],
   2:[['b_type','radio','Type of House'],['b_roof','radio','Roofing Material']],
-  3:[['c_consult','radio','Consultation Sought']],
   6:[['f_heard','radio','Heard about HIV/AIDS'],['f_tested','radio','HIV Test']],
   7:[['g_latrine','radio','Pit Latrine']],
   8:[['h_wsrc','checkbox','Water Source'],['h_treat','radio','Water Treatment']],
@@ -560,6 +559,33 @@ function runAllRules(){
   ruleDeathCauseAutoSuggest();
   ruleIllnessTreatmentChain();
   ruleHIVHeard();
+  // ── SKIP/DIM RULES ──
+  ruleIllnessFollowups();
+  ruleDeathFollowups();
+  ruleConsultFollowup();
+  ruleSpecialNeeds();
+  ruleANCFollowups();
+  ruleContraFollowup();
+  ruleWeaning();
+  // ── COMPREHENSIVE SKIP RULES ──
+  ruleSmokingInside();
+  rulePregnancySection();
+  rulePregHistory();
+  ruleFPChallenges();
+  ruleSkipMealDetails();
+  ruleFoodPreference();
+  ruleGardenDetails();
+  ruleExerciseFreq();
+  ruleChildNutrition();
+  ruleFoodTaboo();
+  ruleHIVTestDate();
+  ruleHealthPayment();
+  ruleOutreachFreq();
+  ruleLarineFull();
+  ruleOralHealth();
+  ruleRiteOfPassage();
+  ruleWifeInheritDetails();
+  ruleBirthDeathRituals();
   updateIntegrityScore();
 }
 
@@ -1011,18 +1037,53 @@ function ruleSmoking(){
 
 // ── RULE: Bedroom count vs people per bedroom ──
 function ruleBedrooms(){
-  const rooms=gvRadio('b_rooms');
-  const sep=gvRadio('b_sep');
-  const proom=gvRadio('b_proom');
-  const totM=gvn('a_tot_m'), totF=gvn('a_tot_f'), totPeople=totM+totF;
-  const grp=document.querySelector('[name="b_proom"]')?.closest('.form-group');
-  if(!rooms||!proom||!totPeople) return;
-  const roomNum={'1':1,'2':2,'3':3,'More than 3':4}[rooms]||1;
-  const perRoom={'1':1,'2–3':2.5,'4':4,'More than 4':5}[proom]||1;
-  const maxCapacity = roomNum * perRoom;
-  if(totPeople > maxCapacity + 2){ // +2 tolerance
-    showFieldMsg(grp,`ℹ ${totPeople} people in ~${roomNum} room(s) at ${proom}/room — high density flagged`,'info');
-  } else { clearFieldMsg(grp); }
+  const rooms  = gvRadio('b_rooms');
+  const proom  = gvRadio('b_proom');
+  const totM   = gvn('a_tot_m'), totF = gvn('a_tot_f'), totPeople = totM + totF;
+  const grp    = document.querySelector('[name="b_proom"]')?.closest('.form-group');
+  if(!grp) return;
+
+  // Map radio values to numbers
+  const roomNum  = {'1':1,'2':2,'3':3,'More than 3':4}[rooms] || 0;
+  const perRoom  = {'1':1,'2–3':2.5,'4':4,'More than 4':5}[proom] || 0;
+
+  // Dim b_proom options that are impossible given total population
+  // e.g. if only 3 people total, "More than 4 per room" is impossible
+  if(totPeople > 0 && roomNum > 0){
+    document.querySelectorAll('[name="b_proom"]').forEach(el=>{
+      const val = {'1':1,'2–3':2.5,'4':4,'More than 4':5}[el.value] || 0;
+      const impliedTotal = val * roomNum;
+      const lbl = el.closest('.chip')?.querySelector('label');
+      if(lbl){
+        if(impliedTotal > totPeople + 1){
+          // More people per room than exist in the house — impossible
+          lbl.style.opacity = '0.3';
+          lbl.title = `Impossible: implies ${Math.round(impliedTotal)} people but household has ${totPeople}`;
+        } else {
+          lbl.style.opacity = '1';
+          lbl.title = '';
+        }
+      }
+    });
+  }
+
+  if(!rooms || !proom || !totPeople) return;
+
+  const impliedTotal = perRoom * roomNum;
+
+  if(impliedTotal > totPeople + 1){
+    // Selected combo implies more people than actually live here
+    showFieldMsg(grp,
+      `⚠ ${proom} people/room × ${roomNum} room(s) implies ~${Math.round(impliedTotal)} people, but household has only ${totPeople} — please correct`,
+      'warn');
+  } else if(totPeople > impliedTotal + 2){
+    // Possible crowding
+    showFieldMsg(grp,
+      `ℹ ${totPeople} people across ~${roomNum} room(s) at ${proom}/room — high density, verify`,
+      'info');
+  } else {
+    clearFieldMsg(grp);
+  }
 }
 
 // ── RULE: Disability cause only if disability exists ──
@@ -1063,7 +1124,219 @@ function ruleBreastfeed(){
   }
 }
 
-// ── RULE: If never heard of HIV, skip information source question ──
+// ══════════════════════════════════════════════════════
+//  SKIP / DIM HELPER
+// ══════════════════════════════════════════════════════
+function skipGroup(name, skip){
+  const grp = document.querySelector(`[name="${name}"]`)?.closest('.form-group');
+  if(!grp) return;
+  grp.style.opacity = skip ? '0.3' : '1';
+  grp.style.pointerEvents = skip ? 'none' : '';
+  // Do NOT clear values — data is preserved even when dimmed.
+  // Values in dimmed fields are excluded at sync time via buildPayload.
+}
+function skipGroups(names, skip){ names.forEach(n=>skipGroup(n,skip)); }
+
+// ── C1–C9: If NO illness, gray out all illness follow-ups (Q2–Q9) ──
+function ruleIllnessFollowups(){
+  const hasIll = document.querySelector('[name="c_ill"]:checked');
+  const followups = ['c_ill_age','c_consult','c_where','c_no_r','c_who','c_accomp','c_meds','c_drug_d'];
+  skipGroups(followups, !hasIll);
+}
+
+// ── C10–C13: If deaths=No, gray out Q11, Q12, Q13 ──
+function ruleDeathFollowups(){
+  const deaths = gvRadio('c_deaths');
+  skipGroups(['c_deaths_n','c_dage','c_dcause'], deaths !== 'Yes');
+  // Also clear the invalid entry warning from old rule
+  const grp = document.querySelector('[name="c_deaths_n"]')?.closest('.form-group');
+  if(deaths === 'No' && grp) clearFieldMsg(grp);
+}
+
+// ── C3: If consult=Yes → hide "reason for NOT seeking" (C5). If No → hide "where consulted" (C4) ──
+function ruleConsultFollowup(){
+  const consult = gvRadio('c_consult');
+  skipGroup('c_where',  consult !== 'Yes');
+  skipGroup('c_no_r',   consult !== 'No');
+}
+
+// ── C14–C16: If special needs=No, gray out C15 & C16 ──
+function ruleSpecialNeeds(){
+  const spec = gvRadio('c_spec');
+  skipGroups(['c_disab','c_disab_c'], spec !== 'Yes');
+}
+
+// ── D4–D7: If ANC=No, gray out D5, D6, D7 ──
+function ruleANCFollowups(){
+  const anc = gvRadio('d_anc');
+  skipGroups(['d_anc_s','d_anc_w','d_anc_r'], anc !== 'Yes');
+}
+
+// ── D12–D13: If contraceptive=No, gray out D13 ──
+function ruleContraFollowup(){
+  const contra = gvRadio('d_contra');
+  skipGroup('d_ct', contra !== 'Yes');
+}
+
+// ── E29–E32: If bf=Yes, gray out "reason for stopping" and weaning fields ──
+function ruleWeaning(){
+  const bf = gvRadio('e_bf');
+  const kids = gvRadio('e_kids');
+  if(kids !== 'Yes'){ skipGroups(['e_wean','e_wf2'], true); return; }
+  skipGroups(['e_wean','e_wf2'], bf === 'Yes');
+}
+
+// ══════════════════════════════════════════════════════
+//  COMPREHENSIVE SKIP / DIM RULES — ALL SECTIONS
+// ══════════════════════════════════════════════════════
+
+// ── SECTION B ──
+// B16: smoke inside → only if B15=Yes (smoke=Yes)
+function ruleSmokingInside(){
+  skipGroup('b_smoke_in', gvRadio('b_smoke') !== 'Yes');
+}
+
+// ── SECTION D: Dim D1-D9 (pregnancy questions) if c_preg=No ──
+function rulePregnancySection(){
+  const preg = gvRadio('c_preg'); // set in Section C Q17
+  const notPreg = preg === 'No';
+  skipGroups(['d_preg','d_preg_age','d_preg_n','d_anc','d_anc_s','d_anc_w','d_anc_r','d_del','d_del_r'], notPreg);
+  // Dim the immunization table if no kids under 5 from section A
+  const u5m = gvn('a_01_m')+gvn('a_23_m')+gvn('a_45_m');
+  const u5f = gvn('a_01_f')+gvn('a_23_f')+gvn('a_45_f');
+  const hasU5 = (u5m + u5f) > 0;
+  const immTable = document.querySelector('[name="dc1s"]')?.closest('.tbl-wrap');
+  const immButtons = immTable?.previousElementSibling;
+  [immTable, immButtons].forEach(el=>{
+    if(el){ el.style.opacity = hasU5 ? '1' : '0.3'; el.style.pointerEvents = hasU5 ? '' : 'none'; }
+  });
+}
+
+// D2-D3: age at 1st preg & pregnancy number → only if ever pregnant (D1)
+function rulePregHistory(){
+  const preg = gvRadio('d_preg');
+  skipGroups(['d_preg_age','d_preg_n'], preg !== 'Yes');
+}
+// D5-D7: ANC details → only if ANC=Yes (already in ruleANCFollowups, extend here)
+// D9: delivery reason → always shown (location always asked)
+// D13: contraceptive method → only if ever used contraceptives
+// D14: FP challenges → only if aware of FP methods
+function ruleFPChallenges(){
+  skipGroup('d_fp_c', gvRadio('d_fp') !== 'Yes');
+}
+
+// ── SECTION E ──
+// E3-E4: which meals skipped + why → only if E2=Yes (skip meals)
+function ruleSkipMealDetails(){
+  const skip = gvRadio('e_skip');
+  skipGroups(['e_skip_m','e_skip_w'], skip !== 'Yes');
+}
+// E10-E11: preferred food types + reason → only if E9=Yes (preferences exist)
+function ruleFoodPreference(){
+  const pref = gvRadio('e_pref');
+  skipGroups(['e_pft','e_pr'], pref !== 'Yes');
+}
+// E15-E17: garden productivity, crops, preservation → only if garden=Yes
+function ruleGardenDetails(){
+  const garden = gvRadio('e_garden');
+  skipGroups(['e_prod','e_crops','e_pres','e_store'], garden !== 'Yes');
+}
+// E24: exercise frequency → only if E23=Yes (exercise)
+function ruleExerciseFreq(){
+  skipGroup('e_exer_f', gvRadio('e_exer') !== 'Yes');
+}
+// E28-E35: all child-related → only if E27=Yes (kids 0-5)
+// E30: stop reason → only if bf=No
+// E34 text, E35 text → only if Yes
+function ruleChildNutrition(){
+  // Derive under-5 presence from Section A age brackets (most reliable source)
+  const u5 = gvn('a_01_m')+gvn('a_23_m')+gvn('a_45_m')+gvn('a_01_f')+gvn('a_23_f')+gvn('a_45_f');
+  const hasU5fromA = u5 > 0;
+  const kidsRadio = gvRadio('e_kids');
+  const hasU5 = hasU5fromA || kidsRadio === 'Yes';
+  const noKids = !hasU5;
+
+  // Auto-pre-fill e_kids radio from Section A data
+  if(hasU5fromA && !kidsRadio){
+    const yesEl = document.querySelector('[name="e_kids"][value="Yes"]');
+    if(yesEl) yesEl.checked = true;
+  } else if(!hasU5fromA && !kidsRadio && (gvn('a_tot_m')+gvn('a_tot_f')) > 0){
+    const noEl = document.querySelector('[name="e_kids"][value="No"]');
+    if(noEl) noEl.checked = true;
+  }
+
+  skipGroups(['e_yng','e_bf','e_bf_s','e_bf_d','e_wean','e_wf2','e_supp','e_ninfo'], noKids);
+  if(!noKids){
+    const bf = gvRadio('e_bf');
+    skipGroups(['e_bf_s'], bf === 'Yes');
+    skipGroups(['e_wean','e_wf2'], bf === 'Yes');
+  }
+  const suppDetail = document.querySelector('[name="e_supp_d"]')?.closest('.form-group');
+  if(suppDetail) suppDetail.style.display = (!noKids && gvRadio('e_supp')==='Yes') ? '' : 'none';
+  const ninfoDetail = document.querySelector('[name="e_ninfo_d"]')?.closest('.form-group');
+  if(ninfoDetail) ninfoDetail.style.display = (!noKids && gvRadio('e_ninfo')==='Yes') ? '' : 'none';
+  // Dim anthropometry table if no kids under 5
+  const anthrTable = document.querySelector('[name="ea1s"]')?.closest('.tbl-wrap');
+  if(anthrTable){ anthrTable.style.opacity = noKids ? '0.3' : '1'; anthrTable.style.pointerEvents = noKids ? 'none' : ''; }
+}
+// E21 food taboo detail → only if taboo=Yes
+function ruleFoodTaboo(){
+  const tabooDetail = document.querySelector('[name="e_taboo_d"]')?.closest('.form-group');
+  if(tabooDetail) tabooDetail.style.display = gvRadio('e_taboo')==='Yes' ? '' : 'none';
+}
+
+// ── SECTION F ──
+// F9: test date → only if F8=Yes (tested)
+function ruleHIVTestDate(){
+  skipGroup('f_test_d', gvRadio('f_tested') !== 'Yes');
+}
+// F18-F19: affordability + payment method → only if F17=Yes (pay for services)
+function ruleHealthPayment(){
+  const pays = gvRadio('f_pay');
+  skipGroups(['f_afford','f_pay_m'], pays !== 'Yes');
+}
+// F22: outreach frequency → only if F21=Yes (outreach exists)
+function ruleOutreachFreq(){
+  skipGroup('f_out_f', gvRadio('f_out') !== 'Yes');
+}
+
+// ── SECTION G ──
+// G2-G10: latrine details → only if latrine=Yes
+// G4: alternative → only if latrine=No
+function ruleLarineFull(){
+  const lat = gvRadio('g_latrine');
+  const hasLat = lat === 'Yes';
+  const noLat  = lat === 'No';
+  skipGroups(['g_lat_n','g_lat_u','g_lat_d','g_lat_wd','g_lat_p','g_lat_s','g_lat_c','g_lat_t'], !hasLat);
+  skipGroup('g_alt', !noLat);
+}
+// G6: oral health action → only if G5=Yes (had oral problems)
+function ruleOralHealth(){
+  skipGroup('g_oral_a', gvRadio('g_oral') !== 'Yes');
+}
+
+// ── SECTION I ──
+// I2-I6: circumcision details → only if rite=Circumcision
+function ruleRiteOfPassage(){
+  const rite = gvRadio('i_rite');
+  const isCirc = rite === 'Circumcision';
+  skipGroups(['i_circ','i_circ_w'], !isCirc);
+  // age and education always relevant if any rite
+  skipGroups(['i_age','i_edu'], !rite);
+  skipGroup('i_edu_c', gvRadio('i_edu') !== 'Yes');
+}
+// I10-I12: inheritance details → only if I9=Yes (wife inheritance practiced)
+function ruleWifeInheritDetails(){
+  const winh = gvRadio('i_winh');
+  skipGroups(['i_winh_h','i_winh_b','i_winh_n'], winh !== 'Yes');
+}
+// I13 detail text → only if rituals=Yes; I14 detail text → only if death rituals=Yes
+function ruleBirthDeathRituals(){
+  const bdDetail = document.querySelector('[name="i_birth_d"]')?.closest('.form-group');
+  if(bdDetail) bdDetail.style.display = gvRadio('i_birth')==='Yes' ? '' : 'none';
+  const ddDetail = document.querySelector('[name="i_death_d"]')?.closest('.form-group');
+  if(ddDetail) ddDetail.style.display = gvRadio('i_death')==='Yes' ? '' : 'none';
+}
 function ruleHIVHeard(){
   const heard = gvRadio('f_heard');
   const infoGrp = document.querySelector('[name="f_info"]')?.closest('.form-group');
@@ -1255,8 +1528,46 @@ function updUI(){
 // ══════════════════════════════════════════════════════
 //  RECORDS
 // ══════════════════════════════════════════════════════
-function newRec(){saveCur();recId='R'+Date.now();recs[recId]={_c:new Date().toLocaleString(),_u:new Date().toLocaleString()};ss();loadInto({});goSec(0);renDrw();showToast('New interview started');}
-function loadRec(id){saveCur();recId=id;loadInto(recs[id]||{});goSec(0);closeDrw();showToast('Record loaded');}
+function newRec(){
+  saveCur();
+  recId='R'+Date.now();
+  const name = getUserName();
+  const today = new Date().toISOString().split('T')[0];
+  recs[recId]={
+    _c: new Date().toLocaleString(),
+    _u: new Date().toLocaleString(),
+    interviewer_name: name,
+    interview_date: today,
+  };
+  ss();
+  loadInto(recs[recId]);
+  fillInterviewerFields(name);
+  goSec(0);
+  renDrw();
+  showToast('New interview started');
+}
+
+// Fill all immunization vaccine dropdowns with ✓, ✗, or clear
+function fillImmunization(val){
+  const vaxCount = 10; // BCG OPV0-3 PV1-3 Rota Measles
+  for(let i=1;i<=5;i++){
+    for(let j=0;j<vaxCount;j++){
+      const el = document.querySelector(`[name="dc${i}v${j}"]`);
+      if(el) el.value = val;
+    }
+  }
+}
+function loadRec(id){
+  saveCur();
+  recId=id;
+  loadInto(recs[id]||{});
+  // Re-fill interviewer card with saved name or fallback to stored user name
+  const name = recs[id]?.interviewer_name || getUserName();
+  fillInterviewerFields(name);
+  goSec(0);
+  closeDrw();
+  showToast('Record loaded');
+}
 function delRec(id){if(!confirm('Delete this record?'))return;delete recs[id];ss();if(recId===id){recId=null;loadInto({});}renDrw();showToast('Deleted',true);}
 function renDrw(){
   const el=document.getElementById('drwList');
@@ -1803,7 +2114,7 @@ ${fg(q('B16','If Yes — Smokes Inside House?')+chips(radio('b_smoke_in','Yes','
 function bSecC(){return sec('Section C','Family Medical History',`
 ${fg(q('C1','Illnesses in last 6 months (tick all)')+chips(cb('c_ill','Diarrhoea','Diarrhoea')+cb('c_ill','Cough/Colds','Cough/Colds')+cb('c_ill','Breathing difficulty','Breathing difficulty')+cb('c_ill','Fever','Fever')+cb('c_ill','Convulsions','Convulsions')+cb('c_ill','Abdominal pains','Abdominal pains')+cb('c_ill','Vomiting','Vomiting')+cb('c_ill','Headache','Headache')+cb('c_ill','Loss of consciousness','Loss of consciousness')+cb('c_ill','Dizziness','Dizziness')+cb('c_ill','Other','Other'))+ti('c_ill_other','Other — specify...'))}
 ${fg(q('C2','Age of affected person')+chips(radio('c_ill_age','0–2 yrs','0–2 yrs')+radio('c_ill_age','3–5 yrs','3–5 yrs')+radio('c_ill_age','6–10 yrs','6–10 yrs')+radio('c_ill_age','11–15 yrs','11–15 yrs')+radio('c_ill_age','16–20 yrs','16–20 yrs')+radio('c_ill_age','21–59 yrs','21–59 yrs')+radio('c_ill_age','60+','60+')))}
-${fg(q('C3','Was consultation sought?','req')+chips(radio('c_consult','Yes','Yes')+radio('c_consult','No','No')+radio('c_consult','Don\'t Know','Don\'t Know')))}
+${fg(q('C3','Was consultation sought?')+chips(radio('c_consult','Yes','Yes')+radio('c_consult','No','No')+radio('c_consult','Don\'t Know','Don\'t Know')))}
 ${fg(q('C4','If Yes — where consulted?')+chips(radio('c_where','Dispensary','Dispensary')+radio('c_where','Govt Health Centre','Govt Health Centre')+radio('c_where','Private Clinic','Private Clinic')+radio('c_where','Hospital','Hospital')+radio('c_where','Traditional Healer','Traditional Healer')+radio('c_where','Other','Other')))}
 ${fg(q('C5','If No — reason for not seeking help')+chips(cb('c_no_r','Not necessary','Not necessary')+cb('c_no_r','Staff unfriendly','Staff unfriendly')+cb('c_no_r','Long wait','Long wait')+cb('c_no_r','Too many patients','Too many patients')+cb('c_no_r','Facility far','Facility far')+cb('c_no_r','No drugs','No drugs')+cb('c_no_r','Other','Other')))}
 ${fg(q('C6','Who do you consult when sick?')+chips(cb('c_who','Doctor','Doctor')+cb('c_who','Nurse','Nurse')+cb('c_who','Clinical Officer','Clinical Officer')+cb('c_who','Chemist','Chemist')+cb('c_who','CHW','CHW')+cb('c_who','Traditional Healer','Traditional Healer')+cb('c_who','Other','Other')))}
@@ -1834,6 +2145,11 @@ ${fg(q('D8','Where was last child delivered?')+chips(radio('d_del','Health Centr
 ${fg(q('D9','Reason for delivery location')+chips(cb('d_del_r','Safe delivery','Safe delivery')+cb('d_del_r','Staff friendly','Staff friendly')+cb('d_del_r','Distance','Distance')+cb('d_del_r','Previous exp.','Previous exp.')+cb('d_del_r','ANC advice','ANC advice')+cb('d_del_r','Mother\'s advice','Mother\'s advice')+cb('d_del_r','Spouse advice','Spouse advice')+cb('d_del_r','Other','Other')))}
 ${sub('D10. Immunization Record (Children under 5)')}
 <p class="info-note" style="margin-bottom:7px">Ask for hospital booklet and verify. PV=Pentavalent, OPV=Oral Polio Vaccine</p>
+<div style="display:flex;gap:7px;margin-bottom:8px;flex-wrap:wrap;">
+  <button type="button" onclick="fillImmunization('✓')" style="background:#1e5c38;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-family:inherit;font-size:0.78rem;font-weight:600;cursor:pointer;">✓ Fill All Yes</button>
+  <button type="button" onclick="fillImmunization('✗')" style="background:#c0392b;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-family:inherit;font-size:0.78rem;font-weight:600;cursor:pointer;">✗ Fill All No</button>
+  <button type="button" onclick="fillImmunization('')" style="background:#6b8a74;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-family:inherit;font-size:0.78rem;font-weight:600;cursor:pointer;">Clear All</button>
+</div>
 <div class="tbl-wrap"><table class="dt">
 <tr><th>#</th><th>Sex</th><th>DOB</th>${vax.map(v=>`<th>${v}</th>`).join('')}</tr>
 ${[1,2,3,4,5].map(i=>`<tr><td>${i}</td><td><select name="dc${i}s"><option value="">-</option><option>M</option><option>F</option></select></td><td><input type="date" name="dc${i}d"></td>${vax.map((_,j)=>`<td><select name="dc${i}v${j}"><option value="">-</option><option>✓</option><option>✗</option></select></td>`).join('')}</tr>`).join('')}
@@ -2016,8 +2332,26 @@ function init(){
     w.appendChild(d);
   });
   const keys=Object.keys(recs);
-  if(keys.length){recId=keys[keys.length-1];loadInto(recs[recId]||{});}
-  else{recId='R'+Date.now();recs[recId]={_c:new Date().toLocaleString(),_u:new Date().toLocaleString()};ss();}
+  const name = getUserName();
+  const today = new Date().toISOString().split('T')[0];
+  if(keys.length){
+    recId=keys[keys.length-1];
+    loadInto(recs[recId]||{});
+    // Always ensure interviewer name is filled
+    const recName = recs[recId]?.interviewer_name || name;
+    fillInterviewerFields(recName);
+  } else {
+    recId='R'+Date.now();
+    recs[recId]={
+      _c: new Date().toLocaleString(),
+      _u: new Date().toLocaleString(),
+      interviewer_name: name,
+      interview_date: today,
+    };
+    ss();
+    loadInto(recs[recId]);
+    fillInterviewerFields(name);
+  }
   updUI();renDrw();
   setTimeout(runAllRules,200);
 }
@@ -2059,14 +2393,21 @@ function saveUserName(){
 }
 
 function fillInterviewerFields(name){
-  // Fill the hidden fields on the consent page
+  if(!name) name = getUserName();
+  if(!name) return;
+  // Hidden input that gets collected into the record
   const hn = document.getElementById('h_interviewer_name');
   if(hn) hn.value = name;
-  // Also fill the card display
+  // Display card on consent page
   const card = document.getElementById('consent_interviewer_card');
   if(card) card.textContent = name;
   const disp = document.getElementById('consent_name_display');
   if(disp) disp.textContent = name;
+  // Also ensure the interview_date field has today's date if empty
+  const dateEl = document.querySelector('[name="interview_date"]');
+  if(dateEl && !dateEl.value){
+    dateEl.value = new Date().toISOString().split('T')[0];
+  }
 }
 
 function applyWelcome(){
@@ -2433,7 +2774,6 @@ function buildPayload(recData){
     occupation:        recData.a_occ            || '',
     consent:           recData.consent_given    || '',
     synced_at:         new Date().toISOString(),
-    raw_json:          JSON.stringify(recData),
   };
 }
 
@@ -2589,12 +2929,11 @@ async function forceSyncAll(){
 window.addEventListener('load', ()=>{
   setTimeout(()=>{
     setSyncStatus(navigator.onLine ? 'idle' : 'offline');
-    if(navigator.onLine && isSyncConfigured()) syncAll();
+    // Do NOT auto-sync on load — only sync when user presses Finish
   }, 2500);
 });
 
-// ── Auto sync when coming back online ──
-window.addEventListener('online',  ()=>{ setSyncStatus('idle'); setTimeout(syncAll, 1500); });
+window.addEventListener('online',  ()=>{ setSyncStatus('idle'); });
 window.addEventListener('offline', ()=>{ setSyncStatus('offline'); showToast('⚠ Gone offline — data saved locally', true); });
 
 // nextSec now syncs inline — no patch needed here
