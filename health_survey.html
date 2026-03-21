@@ -13,6 +13,8 @@
 <link rel="manifest" href="./manifest.json">
 <link rel="apple-touch-icon" href="./icon-192.png">
 <title>Community Health Survey</title>
+<!-- Google Identity Services -->
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
@@ -372,6 +374,10 @@ table.dt select{width:100%;padding:5px 4px;border:1px solid var(--border);border
 .integrity-badge.err{background:var(--red-pale);color:var(--red);border-color:#f5c6c6;}
 @keyframes savePulse{0%{opacity:1}50%{opacity:0.4}100%{opacity:1}}
 .saving{animation:savePulse 0.6s ease 2;}
+@keyframes slideUpPrompt{
+  from{opacity:0;transform:translateY(20px);}
+  to{opacity:1;transform:translateY(0);}
+}
 
 /* ══ WELCOME SCREEN ══════════════════════════════════ */
 #welcome-screen{
@@ -599,7 +605,7 @@ table.dt select{width:100%;padding:5px 4px;border:1px solid var(--border);border
 /* ══ END WELCOME ══════════════════════════════════════ */
 
 @media print{
-  .topbar,.bot-nav,.ov,.drawer,.toast,.modal-ov{display:none!important;}
+  .topbar,.bot-nav,.ov,.drawer,.toast,.modal-ov,#support-fab,#support-prompt{display:none!important;}
   .secs-wrap{padding:0;}
   .sec-card{display:block!important;margin-bottom:14px;page-break-inside:avoid;}
   .sec-hdr{background:#1e5c38!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
@@ -615,6 +621,113 @@ table.dt select{width:100%;padding:5px 4px;border:1px solid var(--border);border
 <!--  WELCOME SCREEN — Premium                          -->
 <!-- ═══════════════════════════════════════════════════ -->
 <div id="welcome-screen">
+
+  <!-- Auth Gate -->
+  <div id="wc-auth" style="display:none;position:absolute;inset:0;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px 20px;">
+    <div style="width:100%;max-width:340px;">
+
+      <!-- Animated welcome heading above card -->
+      <div id="auth-heading" style="text-align:center;margin-bottom:18px;overflow:hidden;">
+        <div id="auth-heading-inner" style="transition:transform .35s cubic-bezier(.4,0,.2,1),opacity .35s;">
+          <div style="color:rgba(61,184,106,.85);font-size:0.65rem;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;margin-bottom:6px;" id="auth-eyebrow">WELCOME BACK</div>
+          <div style="color:#fff;font-size:1.55rem;font-weight:800;line-height:1.1;letter-spacing:-.03em;" id="auth-headline">Sign in to<br>your account</div>
+        </div>
+      </div>
+
+      <!-- Auth card -->
+      <div style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.11);border-radius:24px;overflow:hidden;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);box-shadow:0 8px 40px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.08);">
+
+        <!-- Tab switcher -->
+        <div style="display:flex;padding:5px;gap:4px;background:rgba(0,0,0,.15);" id="auth-tabs">
+          <button onclick="authShowTab('login')" id="auth-tab-login"
+            style="flex:1;padding:10px;border:none;border-radius:10px;font-family:inherit;font-size:0.84rem;font-weight:700;cursor:pointer;background:rgba(255,255,255,.14);color:#fff;transition:all .25s;letter-spacing:.1px;">
+            Sign In
+          </button>
+          <button onclick="authShowTab('register')" id="auth-tab-register"
+            style="flex:1;padding:10px;border:none;border-radius:10px;font-family:inherit;font-size:0.84rem;font-weight:700;cursor:pointer;background:transparent;color:rgba(255,255,255,.4);transition:all .25s;letter-spacing:.1px;">
+            Register
+          </button>
+        </div>
+
+        <!-- Sliding panel container -->
+        <div style="overflow:hidden;position:relative;">
+          <div id="auth-slider" style="display:flex;transition:transform .35s cubic-bezier(.4,0,.2,1);will-change:transform;">
+
+            <!-- LOGIN PANEL -->
+            <div style="min-width:100%;padding:22px 20px 20px;flex-shrink:0;">
+              <div style="color:rgba(255,255,255,.4);font-size:0.68rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:12px;text-align:center;">Your Staff / Interviewer ID</div>
+              <input id="auth-reg-login" type="text" placeholder="e.g. GLU/2024/001 or DR/001"
+                style="width:100%;padding:13px 16px;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.14);border-radius:12px;color:#fff;font-family:inherit;font-size:0.9rem;text-align:center;outline:none;margin-bottom:12px;letter-spacing:.5px;transition:border-color .2s;"
+                oninput="this.value=this.value.toUpperCase()"
+                onfocus="this.style.borderColor='rgba(61,184,106,.6)'"
+                onblur="this.style.borderColor='rgba(255,255,255,.14)'"
+                onkeydown="if(event.key==='Enter')authLogin()">
+              <button onclick="authLogin()"
+                style="width:100%;padding:14px;background:linear-gradient(135deg,#3db86a,#1a9050);color:#fff;border:none;border-radius:12px;font-family:inherit;font-size:0.92rem;font-weight:800;cursor:pointer;box-shadow:0 4px 20px rgba(61,184,106,.35);letter-spacing:.2px;">
+                Sign In →
+              </button>
+              <div style="text-align:center;margin-top:14px;">
+                <span style="color:rgba(255,255,255,.3);font-size:0.74rem;">New here? </span>
+                <span onclick="authShowTab('register')" style="color:rgba(61,184,106,.8);font-size:0.74rem;font-weight:700;cursor:pointer;">Register →</span>
+              </div>
+              <div id="auth-login-msg" style="margin-top:8px;font-size:0.75rem;text-align:center;min-height:16px;"></div>
+            </div>
+
+            <!-- REGISTER PANEL -->
+            <div style="min-width:100%;padding:22px 20px 20px;flex-shrink:0;">
+              <div style="color:rgba(255,255,255,.4);font-size:0.68rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:12px;text-align:center;">First time? Register & Enter</div>
+              <input id="auth-reg-num" type="text" placeholder="Staff / ID number e.g. GLU/2024/001"
+                style="width:100%;padding:12px 16px;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.14);border-radius:12px;color:#fff;font-family:inherit;font-size:0.85rem;text-align:center;outline:none;margin-bottom:9px;transition:border-color .2s;"
+                oninput="this.value=this.value.toUpperCase()"
+                onfocus="this.style.borderColor='rgba(61,184,106,.6)'"
+                onblur="this.style.borderColor='rgba(255,255,255,.14)'">
+              <input id="auth-full-name" type="text" placeholder="Full name"
+                style="width:100%;padding:12px 16px;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.14);border-radius:12px;color:#fff;font-family:inherit;font-size:0.85rem;text-align:center;outline:none;margin-bottom:9px;transition:border-color .2s;"
+                onfocus="this.style.borderColor='rgba(61,184,106,.6)'"
+                onblur="this.style.borderColor='rgba(255,255,255,.14)'">
+              <input id="auth-email" type="email" placeholder="Email (optional)"
+                style="width:100%;padding:12px 16px;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.14);border-radius:12px;color:#fff;font-family:inherit;font-size:0.85rem;text-align:center;outline:none;margin-bottom:14px;transition:border-color .2s;"
+                onfocus="this.style.borderColor='rgba(61,184,106,.6)'"
+                onblur="this.style.borderColor='rgba(255,255,255,.14)'">
+              <button onclick="authRegister()"
+                style="width:100%;padding:14px;background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.18);border-radius:12px;font-family:inherit;font-size:0.92rem;font-weight:800;cursor:pointer;letter-spacing:.2px;transition:background .2s;"
+                onmouseenter="this.style.background='rgba(255,255,255,.18)'"
+                onmouseleave="this.style.background='rgba(255,255,255,.1)'">
+                Register & Enter →
+              </button>
+              <div style="text-align:center;margin-top:14px;">
+                <span style="color:rgba(255,255,255,.3);font-size:0.74rem;">Already registered? </span>
+                <span onclick="authShowTab('login')" style="color:rgba(61,184,106,.8);font-size:0.74rem;font-weight:700;cursor:pointer;">Sign In →</span>
+              </div>
+              <div id="auth-register-msg" style="margin-top:8px;font-size:0.75rem;text-align:center;min-height:16px;"></div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- REMOVED PANEL — only shown if coordinator removed access -->
+      <div id="auth-panel-pending" style="display:none;text-align:center;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.11);border-radius:24px;padding:28px 22px;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);">
+        <div style="font-size:44px;margin-bottom:12px;">🚫</div>
+        <div style="color:#fff;font-weight:800;font-size:1rem;margin-bottom:8px;">Access Removed</div>
+        <div style="color:rgba(255,255,255,.5);font-size:0.78rem;line-height:1.6;margin-bottom:20px;">Your access has been removed by the coordinator. Please contact them to be re-added.</div>
+        <button onclick="authClearAndRetry()" style="width:100%;padding:12px;background:rgba(255,255,255,.08);color:rgba(255,255,255,.7);border:1px solid rgba(255,255,255,.15);border-radius:12px;font-family:inherit;font-size:0.85rem;font-weight:600;cursor:pointer;">← Try Different Account</button>
+      </div>
+
+      <!-- REJECTED PANEL — same as removed -->
+      <div id="auth-panel-rejected" style="display:none;text-align:center;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.11);border-radius:24px;padding:28px 22px;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);">
+        <div style="font-size:44px;margin-bottom:12px;">🚫</div>
+        <div style="color:#fff;font-weight:800;font-size:1rem;margin-bottom:8px;">Access Removed</div>
+        <div style="color:rgba(255,255,255,.5);font-size:0.78rem;line-height:1.6;margin-bottom:20px;">Your access has been removed by the coordinator. Please contact them to be re-added.</div>
+        <button onclick="authClearAndRetry()" style="width:100%;padding:12px;background:rgba(255,255,255,.08);color:rgba(255,255,255,.7);border:1px solid rgba(255,255,255,.15);border-radius:12px;font-family:inherit;font-size:0.85rem;font-weight:600;cursor:pointer;">← Try Different Account</button>
+      </div>
+
+      <!-- Offline note -->
+      <div id="auth-offline-note" style="display:none;margin-top:12px;padding:11px 14px;background:rgba(230,81,0,.2);border:1px solid rgba(230,81,0,.3);border-radius:12px;color:rgba(255,200,150,.9);font-size:0.75rem;text-align:center;line-height:1.5;">
+        📵 Offline — sign in only works if you were previously approved on this device.
+      </div>
+    </div>
+  </div>
 
   <!-- Layered background -->
   <div class="wc-bg"></div>
@@ -636,7 +749,7 @@ table.dt select{width:100%;padding:5px 4px;border:1px solid var(--border);border
     <div class="wc-logo">🏥</div>
 
     <!-- Eyebrow -->
-    <div class="wc-eyebrow">Great Lakes University · Nyamache</div>
+    <div class="wc-eyebrow">Great Lakes University · Nyamache Sub County Hospital</div>
 
     <!-- Glass card -->
     <div class="wc-glass">
@@ -668,38 +781,61 @@ table.dt select{width:100%;padding:5px 4px;border:1px solid var(--border);border
 
   <!-- Footer -->
   <div class="wc-credit">
-    <div class="wc-built">Built by <strong>HazzinBR</strong></div>
-    <div class="wc-tagline">Free · Offline-first · Community health data collection</div>
-    <a class="wc-donate" onclick="showDonateModal()">
-      💚 Support — M-Pesa 0112973866
-    </a>
+    <div class="wc-built">Built by <strong>HazzinBR</strong> &nbsp;·&nbsp; <span style="opacity:.5">Community Health Survey v2.0</span></div>
+    <div class="wc-tagline">Free · Offline-first · Great Lakes University · Nyamache Sub County Hospital</div>
+    <div style="display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:6px;">
+      <a class="wc-donate" onclick="showDonateModal()" style="text-decoration:none">
+        💚 Support via M-Pesa
+      </a>
+    </div>
+    <div style="color:rgba(255,255,255,.18);font-size:0.58rem;letter-spacing:.3px;">
+      © 2026 HazzinBR · Free to use · No copyright restrictions
+    </div>
   </div>
 
 </div>
 
 <!-- DONATE MODAL -->
+<!-- Floating Support FAB -->
+<button id="support-fab" onclick="showDonateModal()" title="Support this project" style="
+  position:fixed;bottom:calc(82px + env(safe-area-inset-bottom));right:16px;
+  z-index:140;width:46px;height:46px;border-radius:50%;
+  background:linear-gradient(135deg,#1a5c35,#1a4060);
+  border:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 4px 18px rgba(0,0,0,.25),0 0 0 0 rgba(61,184,106,.4);
+  animation:fabPulse 3s ease infinite;
+  font-size:20px;
+  transition:transform .15s;
+">💚</button>
+<style>
+@keyframes fabPulse{
+  0%,100%{box-shadow:0 4px 18px rgba(0,0,0,.25),0 0 0 0 rgba(61,184,106,0);}
+  50%{box-shadow:0 4px 18px rgba(0,0,0,.25),0 0 0 8px rgba(61,184,106,.15);}
+}
+#support-fab:active{transform:scale(0.9);}
+</style>
+
+<!-- Support / Donate Modal -->
 <div id="donateModal" style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.6);align-items:flex-end;justify-content:center;">
-  <div style="background:#fff;width:100%;max-width:480px;border-radius:20px 20px 0 0;padding:28px 22px calc(28px + env(safe-area-inset-bottom));">
-    <div style="text-align:center;margin-bottom:20px">
-      <div style="font-size:44px;margin-bottom:10px">💚</div>
-      <div style="font-size:1.2rem;font-weight:700;color:#1e5c38;margin-bottom:6px">Support HazzinBR</div>
-      <div style="font-size:0.84rem;color:#6b8a74;line-height:1.55">This tool is free to use. If it has been helpful to you or your organisation, consider buying the developer a cup of tea ☕</div>
+  <div style="background:#fff;width:100%;max-width:480px;border-radius:24px 24px 0 0;padding:28px 22px calc(28px + env(safe-area-inset-bottom));box-shadow:0 -8px 40px rgba(0,0,0,.2);">
+    <div style="text-align:center;margin-bottom:22px">
+      <div style="font-size:48px;margin-bottom:10px">💚</div>
+      <div style="font-size:1.15rem;font-weight:800;color:#1a5c35;margin-bottom:6px;letter-spacing:-.02em">Support HazzinBR</div>
+      <div style="font-size:0.82rem;color:#6b8a74;line-height:1.6;max-width:300px;margin:0 auto">This tool is free for community health work. If it's been useful, consider supporting the developer ☕</div>
     </div>
-    <div style="background:#e8f5ed;border:1.5px solid #cce0d4;border-radius:14px;padding:18px;text-align:center;margin-bottom:16px">
-      <div style="font-size:0.72rem;font-weight:700;color:#6b8a74;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">M-Pesa Paybill / Number</div>
-      <div style="font-size:2rem;font-weight:700;color:#1e5c38;letter-spacing:2px">0112973866</div>
-      <div style="font-size:0.78rem;color:#6b8a74;margin-top:4px">Any amount appreciated 🙏</div>
+    <div style="background:linear-gradient(135deg,#e8f5ed,#edf4fb);border:1.5px solid #cce0d4;border-radius:16px;padding:18px;text-align:center;margin-bottom:16px">
+      <div style="font-size:0.65rem;font-weight:800;color:#6b8a74;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px">M-Pesa · Send Money</div>
+      <div style="font-size:2.2rem;font-weight:800;color:#1a5c35;letter-spacing:3px;font-variant-numeric:tabular-nums">0112973866</div>
+      <div style="font-size:0.75rem;color:#6b8a74;margin-top:5px">Any amount is appreciated 🙏</div>
     </div>
-    <div style="background:#f9f7f4;border-radius:10px;padding:12px 14px;margin-bottom:16px">
-      <div style="font-size:0.78rem;color:#1a2b22;line-height:1.6">
-        <strong>How to send:</strong><br>
-        1. Open M-Pesa on your phone<br>
-        2. Go to <strong>Send Money</strong><br>
-        3. Enter number: <strong>0112973866</strong><br>
-        4. Enter any amount and send
-      </div>
+    <div style="background:#f7f8fa;border-radius:12px;padding:12px 14px;margin-bottom:18px;font-size:0.77rem;color:#1a2b22;line-height:1.7">
+      <strong>How to send:</strong> Open M-Pesa → Send Money → Enter <strong>0112973866</strong> → Any amount → Send
     </div>
-    <button onclick="document.getElementById('donateModal').style.display='none'" style="width:100%;padding:14px;background:#1e5c38;color:#fff;border:none;border-radius:10px;font-family:inherit;font-size:0.95rem;font-weight:700;cursor:pointer">Close</button>
+    <div style="text-align:center;margin-bottom:14px;font-size:0.65rem;color:#aaa;letter-spacing:.3px">
+      © 2026 HazzinBR · Community Health Survey · Free to use
+    </div>
+    <button onclick="document.getElementById('donateModal').style.display='none'" style="width:100%;padding:14px;background:linear-gradient(135deg,#1a5c35,#1a4060);color:#fff;border:none;border-radius:14px;font-family:inherit;font-size:0.95rem;font-weight:700;cursor:pointer;box-shadow:0 4px 14px rgba(26,92,53,.2)">Close</button>
   </div>
 </div>
 
@@ -1741,6 +1877,42 @@ function openReportWindow(html, type){
   if(!w){ showToast('Allow popups or use Print below',true); return; }
   w.document.write(html);
   w.document.close();
+  // Show support prompt after a short delay — after they've seen the report
+  setTimeout(()=>{
+    showSupportPrompt();
+  }, 3200);
+}
+
+function showSupportPrompt(){
+  // Show as a toast-style bottom notification, not a blocking modal
+  const existing = document.getElementById('support-prompt');
+  if(existing) existing.remove();
+  const el = document.createElement('div');
+  el.id = 'support-prompt';
+  el.style.cssText = `
+    position:fixed;bottom:calc(92px + env(safe-area-inset-bottom));left:12px;right:12px;
+    z-index:490;
+    background:linear-gradient(135deg,#0f1f18ee,#0a1a2eee);
+    backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+    border:1px solid rgba(255,255,255,.1);
+    border-radius:16px;padding:14px 16px;
+    display:flex;align-items:center;gap:12px;
+    box-shadow:0 8px 32px rgba(0,0,0,.3);
+    animation:slideUpPrompt .35s cubic-bezier(.4,0,.2,1) both;
+  `;
+  el.innerHTML = `
+    <div style="font-size:26px;flex-shrink:0">💚</div>
+    <div style="flex:1;min-width:0">
+      <div style="color:#fff;font-size:0.8rem;font-weight:700;margin-bottom:2px">Enjoying this tool?</div>
+      <div style="color:rgba(255,255,255,.5);font-size:0.7rem;line-height:1.4">It's free — if it helped, consider supporting the developer via M-Pesa</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0">
+      <button onclick="document.getElementById('support-prompt').remove();showDonateModal()" style="padding:7px 13px;background:linear-gradient(135deg,#3db86a,#2a9054);color:#fff;border:none;border-radius:8px;font-family:inherit;font-size:0.74rem;font-weight:700;cursor:pointer;white-space:nowrap">Support 💚</button>
+      <button onclick="document.getElementById('support-prompt').remove()" style="padding:5px 13px;background:rgba(255,255,255,.08);color:rgba(255,255,255,.4);border:none;border-radius:8px;font-family:inherit;font-size:0.7rem;cursor:pointer">Maybe later</button>
+    </div>`;
+  document.body.appendChild(el);
+  // Auto-dismiss after 12 seconds
+  setTimeout(()=>{ if(document.getElementById('support-prompt')) el.remove(); }, 12000);
 }
 function exportJSON(){
   closeFinish();
@@ -1928,7 +2100,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f5f5f5;color:#1a2b22
 
 </div>
 
-<div class="sig">Built by <strong>HazzinBR</strong> · Great Lakes University · Free to use · No copyright</div>
+<div class="sig">© 2026 HazzinBR · Community Health Survey · Great Lakes University · Nyamache Sub County Hospital · Free to use · No copyright restrictions</div>
 </div>
 <button class="print-btn" onclick="window.print()">🖨 Print / Save PDF</button>
 </body></html>`;
@@ -2023,7 +2195,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#f5f5f5;color:#1a2b22
   <div class="meta-item"><div class="meta-label">Respondent</div><div class="meta-value">${r.a_age||'?'} yrs · ${r.a_gender||'?'} · ${r.a_marital||'?'}</div></div>
 </div>
 <div class="body">${sectionsHTML}</div>
-<div class="sig">Built by <strong>HazzinBR</strong> · Great Lakes University · Free to use · No copyright</div>
+<div class="sig">© 2026 HazzinBR · Community Health Survey · Great Lakes University · Nyamache Sub County Hospital · Free to use · No copyright restrictions</div>
 </div>
 <button class="print-btn" onclick="window.print()">🖨 Print / Save PDF</button>
 </body></html>`;
@@ -2065,7 +2237,7 @@ function bConsent(){
 const today = new Date().toISOString().split('T')[0];
 return sec('Introduction','Consent Form',`
 <div class="consent-box">
-<p>Good morning/afternoon, my name is <strong id="consent_name_display">___</strong>. I am a student from <strong>Great Lakes University of Kisumu</strong>, collecting data on factors that contribute to ill health in your area.</p>
+<p>Good morning/afternoon, my name is <strong id="consent_name_display">___</strong>. I am a health worker from <strong>Great Lakes University of Kisumu</strong>, conducting a community health situation analysis at <strong>Nyamache Sub County Hospital, Kisii</strong>. We are collecting data on factors that contribute to ill health in your area.</p>
 <p>The data will be shared with the area chief and county health director. Your responses are completely confidential. You may withdraw at any time.</p>
 </div>
 
@@ -2420,16 +2592,378 @@ function applyWelcome(){
     if(greetEl) greetEl.textContent = g + ', ' + name + ' 👋';
     if(titleEl) titleEl.innerHTML = 'Welcome back!';
     if(subEl)   subEl.innerHTML = 'Great Lakes University · Nyamache<br><span style="opacity:.7;font-size:0.75rem">Community Health Situation Analysis</span>';
-    // Pre-fill consent form fields
     setTimeout(()=> fillInterviewerFields(name), 400);
   } else {
     if(greetEl) greetEl.textContent = g;
     if(titleEl) titleEl.innerHTML = 'Community Health<br>Survey';
     if(subEl)   subEl.innerHTML = 'Great Lakes University · Nyamache Sub County<br>Situation Analysis Tool';
-    // Show name input
-    const setup = document.getElementById('wc-name-setup');
-    setTimeout(()=>{ if(setup) setup.style.display='block'; }, 1900);
   }
+}
+
+// ══════════════════════════════════════════════════════
+//  AUTHENTICATION SYSTEM
+// ══════════════════════════════════════════════════════
+
+function authGetSession(){ try{ return JSON.parse(localStorage.getItem(AUTH_KEY)||'null'); }catch{return null;} }
+function authSaveSession(s){ localStorage.setItem(AUTH_KEY, JSON.stringify(s)); }
+function authClearSession(){ localStorage.removeItem(AUTH_KEY); }
+
+// Called on page load — decide what to show
+async function authInit(){
+  spawnParticles();
+  applyWelcome();
+  const session = authGetSession();
+  // Has session — go straight in, just check not removed
+  if(session && session.full_name){
+    if(navigator.onLine){
+      try{
+        const res = await fetch(
+          `${SUPABASE_URL}/rest/v1/${STUDENTS_TABLE}?reg_number=eq.${encodeURIComponent(session.reg_number)}&select=status,full_name`,
+          {headers:{apikey:SUPABASE_KEY,Authorization:'Bearer '+SUPABASE_KEY}}
+        );
+        const data = await res.json();
+        if(data[0]?.status==='removed'){
+          authClearSession();
+          authShowAuthCard(true);
+          authMsg('login','⚠ Your access has been removed. Contact the coordinator.','rgba(255,150,100,.9)');
+          return;
+        }
+      }catch(e){ /* trust local on error */ }
+    }
+    authEnterApp();
+    return;
+  }
+  // No session — show login
+  const hasVisited = !!localStorage.getItem('chsa_user_name');
+  authShowAuthCard(hasVisited);
+  if(!navigator.onLine) document.getElementById('auth-offline-note').style.display='block';
+}
+
+function authShowAuthCard(isReturning=false){
+  const card = document.getElementById('wc-auth');
+  if(card) card.style.display='flex';
+  document.querySelectorAll('.wc-logo,.wc-eyebrow,.wc-glass,.wc-dots,#wc-enter').forEach(el=>{
+    if(el) el.style.display='none';
+  });
+  // Set heading based on whether they've been here before
+  const eyebrow  = document.getElementById('auth-eyebrow');
+  const headline = document.getElementById('auth-headline');
+  const inner    = document.getElementById('auth-heading-inner');
+  if(isReturning){
+    if(eyebrow)  eyebrow.textContent = 'WELCOME BACK';
+    if(headline) headline.innerHTML  = 'Sign in to<br>your account';
+  } else {
+    if(eyebrow)  eyebrow.textContent = 'WELCOME';
+    if(headline) headline.innerHTML  = 'Community<br>Health Survey';
+  }
+  // Animate in
+  if(inner){
+    inner.style.opacity='0'; inner.style.transform='translateY(16px)';
+    setTimeout(()=>{ inner.style.opacity='1'; inner.style.transform='translateY(0)'; }, 120);
+  }
+}
+
+function authEnterApp(){
+  const s = authGetSession();
+  const first = s?.full_name ? s.full_name.split(' ')[0] : getUserName();
+
+  // Animate heading to "Welcome back, Name!"
+  const eyebrow  = document.getElementById('auth-eyebrow');
+  const headline = document.getElementById('auth-headline');
+  const inner    = document.getElementById('auth-heading-inner');
+  const h = new Date().getHours();
+  const g = h<12?'Good Morning':h<17?'Good Afternoon':'Good Evening';
+
+  if(inner){
+    inner.style.opacity='0'; inner.style.transform='translateY(10px)';
+    setTimeout(()=>{
+      if(eyebrow)  eyebrow.textContent = g.toUpperCase();
+      if(headline) headline.innerHTML  = first ? `Welcome back,<br><span style="color:rgba(61,184,106,.9)">${first}</span> 👋` : 'Welcome back!';
+      inner.style.opacity='1'; inner.style.transform='translateY(0)';
+    }, 180);
+  }
+
+  // Fill user name
+  if(first){
+    localStorage.setItem('chsa_user_name', first);
+    fillInterviewerFields(first);
+  }
+
+  // After showing the greeting, fade out auth and enter app
+  setTimeout(()=>{
+    const card = document.getElementById('wc-auth');
+    if(card){ card.style.transition='opacity .4s'; card.style.opacity='0'; }
+    setTimeout(()=>{
+      if(card) card.style.display='none';
+      document.querySelectorAll('.wc-logo,.wc-eyebrow,.wc-glass').forEach(el=>{ if(el) el.style.removeProperty('display'); });
+      enterApp();
+    }, 420);
+  }, 1400);
+}
+
+function authShowTab(tab){
+  const tLogin = document.getElementById('auth-tab-login');
+  const tReg   = document.getElementById('auth-tab-register');
+  const slider = document.getElementById('auth-slider');
+  const eyebrow  = document.getElementById('auth-eyebrow');
+  const headline = document.getElementById('auth-headline');
+  const inner    = document.getElementById('auth-heading-inner');
+
+  // Slide the panel
+  if(slider) slider.style.transform = tab==='login' ? 'translateX(0)' : 'translateX(-100%)';
+
+  // Animate heading out, swap text, animate in
+  if(inner){
+    inner.style.opacity='0';
+    inner.style.transform='translateY(10px)';
+    setTimeout(()=>{
+      if(tab==='login'){
+        if(eyebrow)  eyebrow.textContent  = 'WELCOME BACK';
+        if(headline) headline.innerHTML   = 'Sign in to<br>your account';
+      } else {
+        if(eyebrow)  eyebrow.textContent  = 'JOIN THE TEAM';
+        if(headline) headline.innerHTML   = 'Request<br>access';
+      }
+      inner.style.transform='translateY(0)';
+      inner.style.opacity='1';
+    }, 180);
+  }
+
+  // Update tab styles
+  if(tab==='login'){
+    if(tLogin){ tLogin.style.background='rgba(255,255,255,.14)'; tLogin.style.color='#fff'; }
+    if(tReg)  { tReg.style.background='transparent'; tReg.style.color='rgba(255,255,255,.4)'; }
+  } else {
+    if(tReg)  { tReg.style.background='rgba(255,255,255,.14)'; tReg.style.color='#fff'; }
+    if(tLogin){ tLogin.style.background='transparent'; tLogin.style.color='rgba(255,255,255,.4)'; }
+  }
+}
+
+function authShowPanel(name){
+  const card     = document.querySelector('#wc-auth-card, [id="wc-auth"] > div > div:first-child') || document.getElementById('wc-auth-card');
+  const pending  = document.getElementById('auth-panel-pending');
+  const rejected = document.getElementById('auth-panel-rejected');
+  const tabs     = document.getElementById('auth-tabs');
+  const slider   = document.getElementById('auth-slider');
+  const heading  = document.getElementById('auth-heading');
+  const eyebrow  = document.getElementById('auth-eyebrow');
+  const headline = document.getElementById('auth-headline');
+  const inner    = document.getElementById('auth-heading-inner');
+
+  // Hide all special panels first
+  if(pending)  pending.style.display  = 'none';
+  if(rejected) rejected.style.display = 'none';
+
+  if(name==='login'||name==='register'){
+    if(tabs)    tabs.style.display    = '';
+    if(slider)  slider.parentElement.style.display = '';
+    // Animate heading in
+    if(inner){ inner.style.opacity='0'; inner.style.transform='translateY(10px)'; }
+    setTimeout(()=>{
+      if(name==='login'){
+        if(eyebrow)  eyebrow.textContent = 'WELCOME BACK';
+        if(headline) headline.innerHTML  = 'Sign in to<br>your account';
+      } else {
+        if(eyebrow)  eyebrow.textContent = 'JOIN THE TEAM';
+        if(headline) headline.innerHTML  = 'Request<br>access';
+      }
+      if(inner){ inner.style.opacity='1'; inner.style.transform='translateY(0)'; }
+    }, 100);
+    authShowTab(name);
+  } else if(name==='pending'){
+    if(tabs)   tabs.style.display    = 'none';
+    if(slider) slider.parentElement.style.display = 'none';
+    if(pending) pending.style.display = '';
+    // Animate heading for pending
+    if(inner){ inner.style.opacity='0'; inner.style.transform='translateY(10px)'; }
+    setTimeout(()=>{
+      if(eyebrow)  eyebrow.textContent = 'ACCESS REQUEST';
+      if(headline) headline.innerHTML  = 'Awaiting<br>approval';
+      if(inner){ inner.style.opacity='1'; inner.style.transform='translateY(0)'; }
+    }, 100);
+  } else if(name==='rejected'){
+    if(tabs)   tabs.style.display    = 'none';
+    if(slider) slider.parentElement.style.display = 'none';
+    if(rejected) rejected.style.display = '';
+    if(inner){ inner.style.opacity='0'; inner.style.transform='translateY(10px)'; }
+    setTimeout(()=>{
+      if(eyebrow)  eyebrow.textContent = 'ACCESS DENIED';
+      if(headline) headline.innerHTML  = 'Not<br>approved';
+      if(inner){ inner.style.opacity='1'; inner.style.transform='translateY(0)'; }
+    }, 100);
+  }
+}
+
+function authMsg(panel, msg, color='rgba(255,200,100,.9)'){
+  const el = document.getElementById('auth-'+panel+'-msg');
+  if(el){ el.textContent=msg; el.style.color=color; }
+}
+
+async function authLogin(){
+  const reg = document.getElementById('auth-reg-login').value.trim().toUpperCase();
+  if(!reg){ authMsg('login','⚠ Enter your ID'); return; }
+  if(!navigator.onLine){ authMsg('login','📵 No internet — register first when online.','rgba(255,200,100,.9)'); return; }
+  authMsg('login','Signing in…','rgba(255,255,255,.5)');
+  try{
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/${STUDENTS_TABLE}?reg_number=eq.${encodeURIComponent(reg)}&select=reg_number,full_name,status`,
+      {headers:{apikey:SUPABASE_KEY,Authorization:'Bearer '+SUPABASE_KEY}}
+    );
+    const data = await res.json();
+    if(!data.length){ authMsg('login','❌ ID not found — please register first.'); return; }
+    const user = data[0];
+    if(user.status==='removed'){ authMsg('login','⚠ Your access has been removed. Contact the coordinator.','rgba(255,150,100,.9)'); return; }
+    // All statuses except removed — enter immediately
+    authSaveSession({...user, status:'active'});
+    localStorage.setItem('chsa_user_name', user.full_name.split(' ')[0]);
+    authEnterApp();
+  }catch(e){ authMsg('login','⚠ Connection error — try again'); }
+}
+
+// ══════════════════════════════════════════════════════
+//  AUTHENTICATION SYSTEM
+// ══════════════════════════════════════════════════════
+const AUTH_KEY       = 'chsa_auth';
+const STUDENTS_TABLE = 'chsa_students';
+const TEACHER_EMAIL  = 'hazzinbr001@gmail.com';
+// EmailJS config — free tier, 200 emails/month
+const EMAILJS_SERVICE  = 'service_748pr28';
+const EMAILJS_TEMPLATE = 'template_vebhc8t';
+const EMAILJS_PUBLIC   = 'uuUQcmG7gRRyZTqty';
+// Google OAuth Client ID — replace with yours from console.cloud.google.com
+const GOOGLE_CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com';
+
+function authGetSession(){ try{ return JSON.parse(localStorage.getItem(AUTH_KEY)||'null'); }catch{return null;} }
+function authSaveSession(s){ localStorage.setItem(AUTH_KEY, JSON.stringify(s)); }
+function authClearSession(){ localStorage.removeItem(AUTH_KEY); }
+
+// ── Email notification to teacher via EmailJS ──
+async function authNotifyTeacher(studentName, regNumber, email){
+  try{
+    // EmailJS REST API — works without backend
+    await fetch('https://api.emailjs.com/api/v1.0/email/send',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        service_id:  EMAILJS_SERVICE,
+        template_id: EMAILJS_TEMPLATE,
+        user_id:     EMAILJS_PUBLIC,
+        template_params:{
+          to_email:    TEACHER_EMAIL,
+          student_name: studentName,
+          reg_number:  regNumber,
+          student_email: email||'not provided',
+          time:        new Date().toLocaleString('en-KE'),
+          approve_link:`They have already been granted access and can use the app immediately. Open Admin → 👥 Students tab to remove them if needed.`
+        }
+      })
+    });
+  }catch(e){ /* silently fail — registration still works */ }
+}
+
+// ── Google Sign-In handler ──
+function authGoogleSignIn(){
+  if(typeof google === 'undefined'){
+    authMsg('login','⚠ Google Sign-In not available. Use your ID below.','rgba(255,200,100,.9)');
+    return;
+  }
+  google.accounts.id.initialize({
+    client_id: GOOGLE_CLIENT_ID,
+    callback: (response) => handleGoogleCredential(response, 'login'),
+    context: 'signin',
+    ux_mode: 'popup',
+  });
+  google.accounts.id.prompt();
+}
+
+function authGoogleRegister(){
+  if(typeof google === 'undefined'){
+    authMsg('register','⚠ Google Sign-In not available. Use the form below.','rgba(255,200,100,.9)');
+    return;
+  }
+  google.accounts.id.initialize({
+    client_id: GOOGLE_CLIENT_ID,
+    callback: (response) => handleGoogleCredential(response, 'register'),
+    context: 'signup',
+    ux_mode: 'popup',
+  });
+  google.accounts.id.prompt();
+}
+
+async function handleGoogleCredential(response, mode){
+  try{
+    const payload = JSON.parse(atob(response.credential.split('.')[1]));
+    const googleName  = payload.name  || '';
+    const googleEmail = payload.email || '';
+    const regNumber   = 'G-' + googleEmail.split('@')[0].toUpperCase();
+    authMsg('login','Signing in…','rgba(255,255,255,.5)');
+    await authSubmitRegistration(regNumber, googleName, googleEmail, true);
+  }catch(e){
+    authMsg('login','⚠ Google sign-in error','rgba(255,100,100,.9)');
+  }
+}
+
+async function authSubmitRegistration(reg, name, email, isGoogle=false){
+  const panel = isGoogle ? 'login' : 'register';
+  // Check if already registered
+  const checkUrl = email
+    ? `${SUPABASE_URL}/rest/v1/${STUDENTS_TABLE}?or=(reg_number.eq.${encodeURIComponent(reg)},email.eq.${encodeURIComponent(email)})&select=status,full_name,reg_number`
+    : `${SUPABASE_URL}/rest/v1/${STUDENTS_TABLE}?reg_number=eq.${encodeURIComponent(reg)}&select=status,full_name`;
+  const check = await fetch(checkUrl,{headers:{apikey:SUPABASE_KEY,Authorization:'Bearer '+SUPABASE_KEY}});
+  const existing = await check.json();
+
+  if(existing.length){
+    const s = existing[0];
+    if(s.status==='removed'){
+      authMsg(panel,'⚠ Your access was removed. Contact the coordinator.','rgba(255,150,100,.9)');
+      return;
+    }
+    // Already registered — sign in immediately
+    authSaveSession({reg_number:s.reg_number, full_name:s.full_name, status:'active', email});
+    localStorage.setItem('chsa_user_name', s.full_name.split(' ')[0]);
+    authEnterApp();
+    return;
+  }
+
+  // New — register and enter immediately, notify coordinator in background
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${STUDENTS_TABLE}`,{
+    method:'POST',
+    headers:{'Content-Type':'application/json','apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY,'Prefer':'return=minimal'},
+    body:JSON.stringify({reg_number:reg, full_name:name, email:email||null, status:'active', requested_at:new Date().toISOString()})
+  });
+
+  if(res.ok||res.status===201||res.status===204){
+    authSaveSession({reg_number:reg, full_name:name, status:'active', email});
+    localStorage.setItem('chsa_user_name', name.split(' ')[0]);
+    authNotifyTeacher(name, reg, email); // silent background email
+    authEnterApp();
+  } else {
+    const err = await res.text();
+    authMsg(panel,'⚠ '+err.slice(0,80));
+  }
+}
+
+async function authRegister(){
+  const reg   = document.getElementById('auth-reg-num').value.trim().toUpperCase();
+  const name  = document.getElementById('auth-full-name').value.trim();
+  const email = document.getElementById('auth-email').value.trim().toLowerCase();
+  if(!reg||!name){ authMsg('register','⚠ Fill in your ID and full name'); return; }
+  if(!navigator.onLine){ authMsg('register','📵 No internet connection'); return; }
+  authMsg('register','Registering…','rgba(255,255,255,.5)');
+  try{ await authSubmitRegistration(reg, name, email, false); }
+  catch(e){ authMsg('register','⚠ Connection error — try again'); }
+}
+
+async function authCheckStatus(){
+  // Kept for compatibility — no longer blocks
+  const session = authGetSession();
+  if(session && session.full_name) authEnterApp();
+}
+
+function authClearAndRetry(){
+  authClearSession();
+  authShowPanel('login');
+  document.getElementById('auth-tabs').style.display='';
 }
 
 function enterApp(){
@@ -2471,16 +3005,9 @@ document.addEventListener('change', e=>{
   }
 });
 
-// ── Run welcome ──
+// ── Run welcome & auth ──
 spawnParticles();
-applyWelcome();
-setTimeout(()=>{
-  const dots = document.getElementById('wc-dots');
-  const btn  = document.getElementById('wc-enter');
-  if(dots){ dots.style.transition='opacity .4s'; dots.style.opacity='0'; setTimeout(()=>dots.style.display='none',400); }
-  if(btn && getUserName()){ btn.style.display='flex'; }
-  // First-timers: name setup shown by applyWelcome
-}, 1800);
+authInit();
 </script>
 
 <!-- PWA INSTALL BANNER — shows on HTTPS/Chrome when installable -->
@@ -2578,7 +3105,7 @@ setTimeout(()=>{
     &nbsp;·&nbsp;
     <span style="font-style:italic">Community Health Situation Analysis Tool</span>
     &nbsp;·&nbsp;
-    Free to use — No copyright restrictions
+    Free to use — No copyright restrictions · © 2026 HazzinBR
   </div>
 </div>
 
@@ -3147,6 +3674,7 @@ window.addEventListener('offline', ()=>{ setSyncStatus('offline'); showToast('�
     <button class="adm-tab" onclick="admTab('insights',this)">🔬 Insights</button>
     <button class="adm-tab" onclick="admTab('records',this)">📋 Records</button>
     <button class="adm-tab" onclick="admTab('bin',this)">🗑 Bin <span id="adm-bin-badge" style="display:none;background:#c0392b;color:#fff;border-radius:99px;padding:1px 6px;font-size:0.62rem;margin-left:3px"></span></button>
+    <button class="adm-tab" onclick="admTab('students',this)">👥 Students <span id="adm-students-badge" style="display:none;background:#f39c12;color:#fff;border-radius:99px;padding:1px 6px;font-size:0.62rem;margin-left:3px"></span></button>
   </div>
 
   <!-- TAB: Overview -->
@@ -3218,6 +3746,25 @@ window.addEventListener('offline', ()=>{ setSyncStatus('offline'); showToast('�
       <button class="adm-btn r" style="width:100%;justify-content:center" onclick="admEmptyBin()">💀 Permanently Delete All in Bin</button>
     </div>
   </div>
+
+  <!-- TAB: Students -->
+  <div class="adm-tab-panel" id="adm-panel-students">
+    <div style="background:#e8f5ed;border:1.5px solid #cce0d4;border-radius:12px;padding:12px 14px;margin-bottom:14px;font-size:0.78rem;color:#1a5c35;line-height:1.5;">
+      👥 <strong>Access Control</strong> — Anyone who registers can use the app immediately. Remove a user here to block their access.
+    </div>
+    <div class="adm-toolbar" style="margin-bottom:12px">
+      <div class="adm-btns">
+        <button class="adm-btn g" onclick="admLoadStudents()">↻ Refresh</button>
+      </div>
+    </div>
+    <div id="adm-students-list"></div>
+    <div id="adm-students-empty" class="adm-empty" style="display:none">
+      <div style="font-size:36px;margin-bottom:8px">👥</div>
+      <div style="font-weight:700">No users yet</div>
+      <div style="font-size:.78rem;margin-top:4px">Users appear here when they sign up on the app</div>
+    </div>
+  </div>
+
 </div>
 
 <!-- Detail Modal -->
@@ -3277,15 +3824,6 @@ function closeAdmin(){document.getElementById('admin-overlay').classList.remove(
 // ══════════════════════════════════════════════════════
 //  TAB NAVIGATION
 // ══════════════════════════════════════════════════════
-function admTab(name,el){
-  document.querySelectorAll('.adm-tab').forEach(t=>t.classList.remove('on'));
-  document.querySelectorAll('.adm-tab-panel').forEach(p=>p.classList.remove('on'));
-  el.classList.add('on');
-  document.getElementById('adm-panel-'+name).classList.add('on');
-  if(name==='bin') admRenderBin();
-  if(name==='insights') admRenderInsights();
-}
-
 // ══════════════════════════════════════════════════════
 //  DATA & STATE
 // ══════════════════════════════════════════════════════
@@ -3773,6 +4311,118 @@ function admExportJSON(){
 function admForceSyncAll(){
   if(!confirm('Force re-upload ALL local records?\nThis re-syncs even already-synced records.'))return;
   syncAll(true);
+}
+
+async function admLoadStudents(){
+  const empty = document.getElementById('adm-students-empty');
+  if(empty) empty.style.display='none';
+  try{
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/${STUDENTS_TABLE}?order=requested_at.desc`,
+      {headers:{apikey:SUPABASE_KEY,Authorization:'Bearer '+SUPABASE_KEY}}
+    );
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    _admStudents = await res.json();
+    admRenderStudents();
+  }catch(e){
+    if(empty){ empty.style.display='block'; empty.querySelector('div:nth-child(2)').textContent='⚠ '+e.message; }
+  }
+}
+
+function admRenderStudents(){
+  const list  = document.getElementById('adm-students-list');
+  const empty = document.getElementById('adm-students-empty');
+  const badge = document.getElementById('adm-students-badge');
+
+  const active  = _admStudents.filter(s=>s.status!=='removed');
+  const removed = _admStudents.filter(s=>s.status==='removed');
+
+  // Badge: show count of active users
+  if(badge){ badge.style.display='inline'; badge.textContent=active.length; }
+
+  if(!_admStudents.length){
+    if(list)  list.innerHTML='';
+    if(empty) empty.style.display='block';
+    return;
+  }
+  if(empty) empty.style.display='none';
+
+  const userCard = (s) => `
+    <div style="background:#fff;border-radius:12px;border:1px solid #dde8e2;padding:13px 14px;margin-bottom:9px;display:flex;align-items:center;gap:12px;">
+      <div style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#1a5c35,#1a4060);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:1rem;flex-shrink:0">
+        ${s.full_name.charAt(0).toUpperCase()}
+      </div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-weight:700;font-size:0.85rem;color:#0f1f18;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.full_name}</div>
+        <div style="font-size:0.7rem;color:#6b8a74;margin-top:1px">${s.reg_number}</div>
+        ${s.email?`<div style="font-size:0.66rem;color:#1a4f6e;margin-top:1px">✉ ${s.email}</div>`:''}
+        <div style="font-size:0.62rem;color:#aaa;margin-top:1px">${s.requested_at?'Joined '+new Date(s.requested_at).toLocaleDateString('en-KE',{day:'numeric',month:'short',year:'numeric'}):''}</div>
+      </div>
+      <div>
+        ${s.status==='removed'
+          ? `<button class="adm-btn g" style="padding:7px 12px;font-size:.72rem" onclick="admSetStudentStatus('${s.reg_number}','active')">↩ Restore</button>`
+          : `<button class="adm-btn r" style="padding:7px 12px;font-size:.72rem" onclick="admConfirmRemove('${s.reg_number}','${s.full_name.replace(/'/g,"\\'").replace(/"/g,'\\"')}')">✕ Remove</button>`
+        }
+      </div>
+    </div>`;
+
+  let html = '';
+  if(active.length){
+    html += `<div style="font-size:0.7rem;font-weight:700;color:#1e5c38;text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px;">✓ Active Users (${active.length})</div>`;
+    html += active.map(userCard).join('');
+  }
+  if(removed.length){
+    html += `<div style="font-size:0.7rem;font-weight:700;color:#c0392b;text-transform:uppercase;letter-spacing:.8px;margin:16px 0 8px;">✕ Removed (${removed.length})</div>`;
+    html += removed.map(userCard).join('');
+  }
+  if(list) list.innerHTML = html;
+}
+
+function admConfirmRemove(regNumber, name){
+  if(!confirm(`Remove access for ${name}?\n\nThey will not be able to sign in. You can restore them anytime.`)) return;
+  admSetStudentStatus(regNumber, 'removed');
+}
+
+async function admSetStudentStatus(regNumber, status){
+  try{
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/${STUDENTS_TABLE}?reg_number=eq.${encodeURIComponent(regNumber)}`,
+      {
+        method:'PATCH',
+        headers:{
+          'Content-Type':'application/json',
+          'apikey':SUPABASE_KEY,
+          'Authorization':'Bearer '+SUPABASE_KEY,
+          'Prefer':'return=minimal'
+        },
+        body:JSON.stringify({status, approved_at: status==='approved'?new Date().toISOString():null})
+      }
+    );
+    if(res.ok||res.status===204){
+      showToast(status==='removed'?'✗ User removed':'✓ User restored');
+      admLoadStudents();
+    } else {
+      showToast('⚠ Update failed — check Supabase RLS',true);
+    }
+  }catch(e){
+    showToast('⚠ Network error',true);
+  }
+}
+
+
+// ══════════════════════════════════════════════════════
+//  STUDENTS MANAGEMENT
+// ══════════════════════════════════════════════════════
+let _admStudents = [];
+
+function admTab(name,el){
+  document.querySelectorAll('.adm-tab').forEach(t=>t.classList.remove('on'));
+  document.querySelectorAll('.adm-tab-panel').forEach(p=>p.classList.remove('on'));
+  el.classList.add('on');
+  document.getElementById('adm-panel-'+name).classList.add('on');
+  if(name==='bin') admRenderBin();
+  if(name==='insights') admRenderInsights();
+  if(name==='students') admLoadStudents();
 }
 </script>
 
