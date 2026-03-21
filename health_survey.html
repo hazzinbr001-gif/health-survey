@@ -1892,9 +1892,19 @@ function ruleSecE(){
   dimGrpSoft('e_pft', pref !== 'Yes');
   dimGrpSoft('e_pr',  pref !== 'Yes');
 
-  // E14=No → dim E15 (productivity), E16 (crops last)
+  // E14=No → dim E15 (productivity), E16 (crops last), E16b crop table
   dimGrpSoft('e_prod',  garden !== 'Yes');
   dimGrpSoft('e_crops', garden !== 'Yes');
+  const cropWrap = document.getElementById('crop-table-wrap');
+  if(cropWrap){
+    const dim = garden !== 'Yes';
+    cropWrap.style.transition    = 'opacity .3s,filter .3s';
+    cropWrap.style.opacity       = dim ? '0.28' : '1';
+    cropWrap.style.pointerEvents = dim ? 'none' : '';
+    cropWrap.style.filter        = dim ? 'grayscale(60%)' : 'none';
+  }
+  const cropSub = document.getElementById('crop-table-wrap')?.previousElementSibling;
+  if(cropSub){ cropSub.style.opacity = garden !== 'Yes' ? '0.28' : '1'; cropSub.style.transition='opacity .3s'; }
 
   // E21=No → dim taboo detail field (soft — text input)
   const tabooGrp = document.querySelector('[name="e_taboo_d"]')?.closest('.form-group');
@@ -2885,6 +2895,76 @@ ${fg(q('E13','Foods bought from shop/hotel')+ta('e_shop','List types of foods pu
 ${fg(q('E14','Do you have a garden?')+chips(radio('e_garden','Yes','Yes')+radio('e_garden','No','No')))}
 ${fg(q('E15','Garden productivity')+chips(radio('e_prod','Very good','Very good')+radio('e_prod','Good','Good')+radio('e_prod','Fair','Fair')+radio('e_prod','Poor','Poor')))}
 ${fg(q('E16','Do crops last to next harvest?')+chips(radio('e_crops','Yes','Yes')+radio('e_crops','No','No')))}
+${sub('E16b. Which food crops do you grow? (tick all that apply)')}
+<div id="crop-table-wrap" class="tbl-wrap"><table class="dt" style="font-size:0.78rem;table-layout:fixed;width:100%;">
+<colgroup><col style="width:25%"><col style="width:25%"><col style="width:25%"><col style="width:25%"></colgroup>
+<tr>
+  <th style="text-align:left;padding:7px 8px;background:linear-gradient(135deg,#1a5c35,#1a4060);">Carbohydrates</th>
+  <th style="text-align:left;padding:7px 8px;background:linear-gradient(135deg,#1a5c35,#1a4060);">Legumes</th>
+  <th style="text-align:left;padding:7px 8px;background:linear-gradient(135deg,#1a5c35,#1a4060);">Vegetables</th>
+  <th style="text-align:left;padding:7px 8px;background:linear-gradient(135deg,#1a5c35,#1a4060);">Fruits</th>
+</tr>
+<tr>
+  <td style="padding:5px 8px;"><label style="display:flex;align-items:center;gap:5px;cursor:pointer;"><input type="checkbox" name="e_crop_c" value="Wheat"> Wheat</label></td>
+  <td style="padding:5px 8px;"><label style="display:flex;align-items:center;gap:5px;cursor:pointer;"><input type="checkbox" name="e_crop_l" value="Beans"> Beans</label></td>
+  <td style="padding:5px 8px;"><label style="display:flex;align-items:center;gap:5px;cursor:pointer;"><input type="checkbox" name="e_crop_v" value="Sukuma wiki"> Sukuma wiki</label></td>
+  <td style="padding:5px 8px;"><label style="display:flex;align-items:center;gap:5px;cursor:pointer;"><input type="checkbox" name="e_crop_f" value="Bananas"> Bananas</label></td>
+</tr>
+<tr>
+  <td style="padding:5px 8px;"><label style="display:flex;align-items:center;gap:5px;cursor:pointer;"><input type="checkbox" name="e_crop_c" value="Maize"> Maize</label></td>
+  <td style="padding:5px 8px;"><label style="display:flex;align-items:center;gap:5px;cursor:pointer;"><input type="checkbox" name="e_crop_l" value="Peas"> Peas</label></td>
+  <td style="padding:5px 8px;"><label style="display:flex;align-items:center;gap:5px;cursor:pointer;"><input type="checkbox" name="e_crop_v" value="Cabbage"> Cabbage</label></td>
+  <td style="padding:5px 8px;"><label style="display:flex;align-items:center;gap:5px;cursor:pointer;"><input type="checkbox" name="e_crop_f" value="Oranges"> Oranges</label></td>
+</tr>
+<tr>
+  <td style="padding:5px 8px;"><label style="display:flex;align-items:center;gap:5px;cursor:pointer;"><input type="checkbox" name="e_crop_c" value="Millet"> Millet</label></td>
+  <td style="padding:5px 8px;"><label style="display:flex;align-items:center;gap:5px;cursor:pointer;"><input type="checkbox" name="e_crop_l" value="Dengue"> Dengue</label></td>
+  <td style="padding:5px 8px;"><label style="display:flex;align-items:center;gap:5px;cursor:pointer;"><input type="checkbox" name="e_crop_v" value="Spinach"> Spinach</label></td>
+  <td style="padding:5px 8px;"><label style="display:flex;align-items:center;gap:5px;cursor:pointer;"><input type="checkbox" name="e_crop_f" value="Pineapples"> Pineapples</label></td>
+</tr>
+<tr>
+  <td style="padding:5px 8px;"><label style="display:flex;align-items:center;gap:5px;cursor:pointer;"><input type="checkbox" name="e_crop_c" value="Sweet potatoes"> Sweet potatoes</label></td>
+  <td style="padding:5px 8px;"><label style="display:flex;align-items:center;gap:5px;cursor:pointer;"><input type="checkbox" name="e_crop_l" value="Ground nuts"> Ground nuts</label></td>
+  <td style="padding:5px 8px;"><label style="display:flex;align-items:center;gap:5px;cursor:pointer;"><input type="checkbox" name="e_crop_v" value="Managu"> Managu</label></td>
+  <td style="padding:5px 8px;"><label style="display:flex;align-items:center;gap:5px;cursor:pointer;"><input type="checkbox" name="e_crop_f" value="Mangoes"> Mangoes</label></td>
+</tr>
+<tr>
+  <td style="padding:5px 8px;"><label style="display:flex;align-items:center;gap:5px;cursor:pointer;"><input type="checkbox" name="e_crop_c" value="Irish potatoes"> Irish potatoes</label></td>
+  <td style="padding:5px 8px;"><label style="display:flex;align-items:center;gap:5px;cursor:pointer;"><input type="checkbox" name="e_crop_l" value="Others (Legumes)"> Others</label></td>
+  <td style="padding:5px 8px;"><label style="display:flex;align-items:center;gap:5px;cursor:pointer;"><input type="checkbox" name="e_crop_v" value="Saga"> Saga</label></td>
+  <td style="padding:5px 8px;"><label style="display:flex;align-items:center;gap:5px;cursor:pointer;"><input type="checkbox" name="e_crop_f" value="Passion fruits"> Passion fruits</label></td>
+</tr>
+<tr>
+  <td style="padding:5px 8px;"><label style="display:flex;align-items:center;gap:5px;cursor:pointer;"><input type="checkbox" name="e_crop_c" value="Cassava"> Cassava</label></td>
+  <td></td>
+  <td style="padding:5px 8px;"><label style="display:flex;align-items:center;gap:5px;cursor:pointer;"><input type="checkbox" name="e_crop_v" value="Mchicha (Amarantha)"> Mchicha</label></td>
+  <td style="padding:5px 8px;"><label style="display:flex;align-items:center;gap:5px;cursor:pointer;"><input type="checkbox" name="e_crop_f" value="Pawpaw"> Pawpaw</label></td>
+</tr>
+<tr>
+  <td style="padding:5px 8px;"><label style="display:flex;align-items:center;gap:5px;cursor:pointer;"><input type="checkbox" name="e_crop_c" value="Bananas"> Bananas</label></td>
+  <td></td>
+  <td style="padding:5px 8px;"><label style="display:flex;align-items:center;gap:5px;cursor:pointer;"><input type="checkbox" name="e_crop_v" value="Mrenda"> Mrenda</label></td>
+  <td style="padding:5px 8px;"><label style="display:flex;align-items:center;gap:5px;cursor:pointer;"><input type="checkbox" name="e_crop_f" value="Guavas"> Guavas</label></td>
+</tr>
+<tr>
+  <td style="padding:5px 8px;"><label style="display:flex;align-items:center;gap:5px;cursor:pointer;"><input type="checkbox" name="e_crop_c" value="Yams"> Yams</label></td>
+  <td></td>
+  <td style="padding:5px 8px;"><label style="display:flex;align-items:center;gap:5px;cursor:pointer;"><input type="checkbox" name="e_crop_v" value="Kunde (Cow peas)"> Kunde</label></td>
+  <td style="padding:5px 8px;"><label style="display:flex;align-items:center;gap:5px;cursor:pointer;"><input type="checkbox" name="e_crop_f" value="Others (Fruits)"> Others</label></td>
+</tr>
+<tr>
+  <td style="padding:5px 8px;"><label style="display:flex;align-items:center;gap:5px;cursor:pointer;"><input type="checkbox" name="e_crop_c" value="Arrow roots"> Arrow roots</label></td>
+  <td></td>
+  <td style="padding:5px 8px;"><label style="display:flex;align-items:center;gap:5px;cursor:pointer;"><input type="checkbox" name="e_crop_v" value="Others (Vegetables)"> Others</label></td>
+  <td></td>
+</tr>
+<tr>
+  <td style="padding:5px 8px;"><label style="display:flex;align-items:center;gap:5px;cursor:pointer;"><input type="checkbox" name="e_crop_c" value="Others (Specify)"> Others (Specify)</label></td>
+  <td></td>
+  <td></td>
+  <td></td>
+</tr>
+</table></div>
 ${fg(q('E17','Food preservation methods')+chips(cb('e_pres','Drying','Drying')+cb('e_pres','Smoking','Smoking')+cb('e_pres','Chemicals','Chemicals')+cb('e_pres','Ash','Ash')+cb('e_pres','Airtight containers','Airtight containers')+cb('e_pres','Other','Other')))}
 ${fg(q('E18','Food storage')+chips(radio('e_store','House','House')+radio('e_store','Granary','Granary')+radio('e_store','Other','Other')))}
 ${fg(q('E19','Enough food cooked for family?')+chips(radio('e_enough','Yes','Yes')+radio('e_enough','No','No')))}
