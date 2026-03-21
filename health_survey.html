@@ -979,8 +979,49 @@ function gvn(name){return parseInt(gv(name))||0;}
 function gvRadio(name){const el=document.querySelector(`[name="${name}"]:checked`);return el?el.value:'';}
 
 // ══════════════════════════════════════════════════════
-//  INTEGRITY ENGINE — ALL SMART RULES
+//  VAX TABLE QUICK-FILL HELPERS
 // ══════════════════════════════════════════════════════
+function vaxQuickFillAll(){
+  const today = new Date().toISOString().split('T')[0];
+  for(let i=1;i<=5;i++){
+    const dob = document.querySelector(`[name="dc${i}d"]`);
+    const sex = document.querySelector(`[name="dc${i}s"]`);
+    if(dob && !dob.value) dob.value = today;
+    if(sex && !sex.value) sex.value = 'M';
+    for(let j=0;j<10;j++){
+      const sel = document.querySelector(`[name="dc${i}v${j}"]`);
+      if(sel) sel.value = '✓';
+    }
+  }
+  showToast('⚡ All 5 children filled with ✓');
+}
+function vaxQuickFillNone(){
+  for(let i=1;i<=5;i++){
+    const dob = document.querySelector(`[name="dc${i}d"]`);
+    const sex = document.querySelector(`[name="dc${i}s"]`);
+    if(dob) dob.value = '';
+    if(sex) sex.value = '';
+    for(let j=0;j<10;j++){
+      const sel = document.querySelector(`[name="dc${i}v${j}"]`);
+      if(sel) sel.value = '';
+    }
+  }
+  showToast('✗ Vaccination table cleared');
+}
+function vaxQuickFill1Child(){
+  const today = new Date().toISOString().split('T')[0];
+  const dob = document.querySelector('[name="dc1d"]');
+  const sex = document.querySelector('[name="dc1s"]');
+  if(dob && !dob.value) dob.value = today;
+  if(sex && !sex.value) sex.value = 'M';
+  for(let j=0;j<10;j++){
+    const sel = document.querySelector(`[name="dc1v${j}"]`);
+    if(sel) sel.value = '✓';
+  }
+  showToast('👶 Row 1 filled with ✓');
+}
+
+
 
 function runAllRules(){
   ruleConsentAge();
@@ -1020,6 +1061,17 @@ function runAllRules(){
   ruleDeathCauseAutoSuggest();
   ruleIllnessTreatmentChain();
   ruleHIVHeard();
+  ruleVaxTable();
+  // ── NEW: Full per-section conditional rules ──
+  ruleSecA();
+  ruleSecB();
+  ruleSecC();
+  ruleSecD();
+  ruleSecE();
+  ruleSecF();
+  ruleSecG();
+  ruleSecH();
+  ruleSecI();
   updateIntegrityScore();
 }
 
@@ -1418,14 +1470,27 @@ function ruleMoveAway(){
 function ruleDeaths(){
   const deathsY=gvRadio('c_deaths');
   const deathsN=gvn('c_deaths_n');
-  const grp=document.querySelector('[name="c_deaths_n"]')?.closest('.form-group');
-  if(deathsY==='No' && deathsN>0){
-    showFieldMsg(grp,'⚠ Deaths = No but number entered — please correct','warn');
-    document.querySelector('[name="c_deaths_n"]').value='';
+  const grpN=document.querySelector('[name="c_deaths_n"]')?.closest('.form-group');
+  const grpAge=document.querySelector('[name="c_dage"]')?.closest('.form-group');
+  const grpCause=document.querySelector('[name="c_dcause"]')?.closest('.form-group');
+
+  if(deathsY==='No'){
+    [grpN,grpAge,grpCause].forEach(g=>{if(!g)return;g.style.opacity='0.35';g.style.pointerEvents='none';});
+    // Warn but do NOT auto-clear — let interviewer consciously fix it
+    if(deathsN>0){ showFieldMsg(grpN,'⚠ Deaths = No but a number is entered — please clear or correct','warn'); }
+    else { clearFieldMsg(grpN); }
+  } else if(deathsY==='Yes'){
+    [grpN,grpAge,grpCause].forEach(g=>{if(!g)return;g.style.opacity='1';g.style.pointerEvents='';});
+    if(deathsN===0){ showFieldMsg(grpN,'ℹ Please enter number of deaths','info'); }
+    else {
+      const totPeople=gvn('a_tot_m')+gvn('a_tot_f');
+      if(totPeople>0 && deathsN>totPeople){ showFieldMsg(grpN,`⚠ Deaths (${deathsN}) exceed household members (${totPeople}) — verify`,'warn'); }
+      else { clearFieldMsg(grpN); }
+    }
+  } else {
+    // Unanswered — dim gently
+    [grpN,grpAge,grpCause].forEach(g=>{if(!g)return;g.style.opacity='0.5';g.style.pointerEvents='none';});
   }
-  if(deathsY==='Yes' && deathsN===0){
-    showFieldMsg(grp,'ℹ Please enter number of deaths','info');
-  } else if(deathsY==='Yes') { clearFieldMsg(grp); }
 }
 
 // ── RULE: Latrine use logic ──
@@ -1434,13 +1499,21 @@ function ruleLatrine(){
   const altGrp=document.querySelector('[name="g_alt"]')?.closest('.form-group');
   const numGrp=document.querySelector('[name="g_lat_n"]')?.closest('.form-group');
   if(lat==='No'){
-    // No latrine — show alternative field prominently
-    if(altGrp) altGrp.style.borderLeft='3px solid var(--red)';
-    if(numGrp) numGrp.style.opacity='0.4';
-    showFieldMsg(altGrp,'⚠ No pit latrine — please record the alternative method used','warn');
+    // No latrine — show alternative field prominently, dim number
+    if(altGrp){
+      altGrp.style.borderLeft='3px solid var(--red)';
+      altGrp.style.opacity='1';
+      altGrp.style.pointerEvents='';
+      showFieldMsg(altGrp,'⚠ No pit latrine — please record the alternative method used','warn');
+    }
+    if(numGrp){ numGrp.style.opacity='0.35'; numGrp.style.pointerEvents='none'; }
+  } else if(lat==='Yes'){
+    if(altGrp){ altGrp.style.borderLeft=''; altGrp.style.opacity='0.35'; altGrp.style.pointerEvents='none'; clearFieldMsg(altGrp); }
+    if(numGrp){ numGrp.style.opacity='1'; numGrp.style.pointerEvents=''; }
   } else {
+    // Unanswered — neutral
     if(altGrp){ altGrp.style.borderLeft=''; clearFieldMsg(altGrp); }
-    if(numGrp) numGrp.style.opacity='1';
+    if(numGrp){ numGrp.style.opacity='1'; numGrp.style.pointerEvents=''; }
   }
 }
 
@@ -1505,21 +1578,26 @@ function ruleBreastfeed(){
   const stopGrp=document.querySelector('[name="e_bf_s"]')?.closest('.form-group');
   const durGrp=document.querySelector('[name="e_bf_d"]')?.closest('.form-group');
   const kids=gvRadio('e_kids');
-  // If no kids 0–5 gray out all
+  // If no kids 0–5 gray out all — ruleSecE handles this too, just guard here
   const yngGrp=document.querySelector('[name="e_yng"]')?.closest('.form-group');
   const bfGrp=document.querySelector('[name="e_bf"]')?.closest('.form-group');
   if(kids==='No'){
     [yngGrp,bfGrp,stopGrp,durGrp].forEach(g=>{ if(g){ g.style.opacity='0.35'; g.style.pointerEvents='none'; } });
     return;
-  } else {
-    [yngGrp,bfGrp,stopGrp,durGrp].forEach(g=>{ if(g){ g.style.opacity='1'; g.style.pointerEvents=''; } });
   }
+  // Kids present — unlock breastfeeding questions
+  [yngGrp,bfGrp].forEach(g=>{ if(g){ g.style.opacity='1'; g.style.pointerEvents=''; } });
+  // Stop reason only if stopped (bf=No), duration only if had bf at all
   if(bf==='Yes'){
     if(stopGrp){ stopGrp.style.opacity='0.35'; stopGrp.style.pointerEvents='none'; }
-    if(durGrp){ durGrp.style.opacity='0.35'; durGrp.style.pointerEvents='none'; }
-  } else {
+    if(durGrp){ durGrp.style.opacity='1'; durGrp.style.pointerEvents=''; }
+  } else if(bf==='No'){
     if(stopGrp){ stopGrp.style.opacity='1'; stopGrp.style.pointerEvents=''; }
     if(durGrp){ durGrp.style.opacity='1'; durGrp.style.pointerEvents=''; }
+  } else {
+    // Not yet answered
+    if(stopGrp){ stopGrp.style.opacity='0.5'; stopGrp.style.pointerEvents='none'; }
+    if(durGrp){ durGrp.style.opacity='0.5'; durGrp.style.pointerEvents='none'; }
   }
 }
 
@@ -1537,21 +1615,52 @@ function ruleHIVHeard(){
   }
 }
 
+// ── RULE: Vaccination table only relevant if children under 5 exist ──
+// Uses D8 (delivery = had a child) OR e_kids=Yes. If neither answered, show table open.
+function ruleVaxTable(){
+  const vaxWrap = document.getElementById('vax-table-wrap');
+  if(!vaxWrap) return;
+  const kids   = gvRadio('e_kids');   // Section E — explicit 0-5 flag
+  const dDel   = gvRadio('d_del');    // Section D — had a delivery = likely has children
+  const dPreg  = gvRadio('d_preg');   // Section D — ever pregnant
+
+  // Dim only when we are certain there are no children:
+  // e_kids explicitly No, OR never been pregnant (d_preg=No)
+  const definitelyNoKids = kids === 'No' || dPreg === 'No';
+
+  if(definitelyNoKids){
+    vaxWrap.style.opacity='0.3';
+    vaxWrap.style.pointerEvents='none';
+    vaxWrap.style.position='relative';
+    let overlay = document.getElementById('vax-dim-overlay');
+    if(!overlay){
+      overlay = document.createElement('div');
+      overlay.id = 'vax-dim-overlay';
+      overlay.style.cssText='position:absolute;inset:0;z-index:5;display:flex;align-items:center;justify-content:center;background:rgba(247,248,250,.7);border-radius:12px;';
+      overlay.innerHTML='<div style="background:#fff;border:1.5px solid var(--border);border-radius:10px;padding:10px 16px;font-size:0.78rem;font-weight:700;color:var(--muted);box-shadow:var(--shadow-sm)">🚫 No children under 5 in household</div>';
+      vaxWrap.appendChild(overlay);
+    }
+    overlay.style.display='flex';
+  } else {
+    vaxWrap.style.opacity='1';
+    vaxWrap.style.pointerEvents='';
+    const overlay = document.getElementById('vax-dim-overlay');
+    if(overlay) overlay.style.display='none';
+  }
+}
+
 // ── RULE: HIV treatment only if family member positive ──
+// NOTE: ruleSecF also handles f_arv/f_arv_r and runs after — it takes final precedence.
+// This rule only adds the warning messages; dimming is owned by ruleSecF.
 function ruleHIVFamily(){
   const pos=gvRadio('f_fam_hiv');
-  const arvGrp=document.querySelector('[name="f_arv"]')?.closest('.form-group');
-  const arvRGrp=document.querySelector('[name="f_arv_r"]')?.closest('.form-group');
-  if(pos==='No'){
-    [arvGrp,arvRGrp].forEach(g=>{ if(g){ g.style.opacity='0.35'; g.style.pointerEvents='none'; } });
-  } else {
-    [arvGrp,arvRGrp].forEach(g=>{ if(g){ g.style.opacity='1'; g.style.pointerEvents=''; } });
-  }
-  // ARV reason only if not on treatment
   const arv=gvRadio('f_arv');
-  if(arvRGrp){
-    if(arv==='Yes'){ arvRGrp.style.opacity='0.35'; arvRGrp.style.pointerEvents='none'; }
-    else if(arv==='No'){ arvRGrp.style.opacity='1'; arvRGrp.style.pointerEvents=''; }
+  const arvRGrp=document.querySelector('[name="f_arv_r"]')?.closest('.form-group');
+  // ARV reason message
+  if(pos==='Yes' && arv==='No' && arvRGrp){
+    showFieldMsg(arvRGrp,'ℹ Please document reasons for not being on ARV treatment','info');
+  } else {
+    clearFieldMsg(arvRGrp);
   }
 }
 
@@ -1582,8 +1691,269 @@ function ruleFoodShortage(){
 }
 
 // ══════════════════════════════════════════════════════
-//  FIELD MESSAGE HELPERS
+//  HELPER: dim/unlock a group by name
 // ══════════════════════════════════════════════════════
+function dimGrp(name, dim){
+  const el = document.querySelector(`[name="${name}"]`);
+  const grp = el?.closest('.form-group');
+  if(!grp) return;
+  grp.style.opacity = dim ? '0.35' : '1';
+  grp.style.pointerEvents = dim ? 'none' : '';
+  if(dim){
+    // Clear values when dimming
+    grp.querySelectorAll('input[type=radio],input[type=checkbox]').forEach(i=>i.checked=false);
+    grp.querySelectorAll('input[type=text],input[type=number],textarea,select').forEach(i=>{
+      if(i.tagName==='SELECT') i.value=''; else i.value='';
+    });
+  }
+}
+function dimGrpSoft(name, dim){
+  // Soft dim — no value clearing
+  const el = document.querySelector(`[name="${name}"]`);
+  const grp = el?.closest('.form-group');
+  if(!grp) return;
+  grp.style.opacity = dim ? '0.35' : '1';
+  grp.style.pointerEvents = dim ? 'none' : '';
+}
+
+// ══════════════════════════════════════════════════════
+//  SECTION A — DEMOGRAPHY
+// ══════════════════════════════════════════════════════
+function ruleSecA(){
+  // A6=No → dim A7 (move reason)
+  const move = gvRadio('a_move');
+  dimGrpSoft('a_move_r', move === 'No');
+}
+
+// ══════════════════════════════════════════════════════
+//  SECTION B — HOUSING
+// ══════════════════════════════════════════════════════
+function ruleSecB(){
+  // B5 (bedrooms)=1 → B6 (separate bedrooms) is irrelevant
+  const rooms = gvRadio('b_rooms');
+  dimGrpSoft('b_sep', rooms === '1');
+
+  // B15 (smokes)=No → dim B16 (smokes inside)
+  const smoke = gvRadio('b_smoke');
+  dimGrpSoft('b_smoke_in', smoke !== 'Yes');
+}
+
+// ══════════════════════════════════════════════════════
+//  SECTION C — MEDICAL HISTORY
+// ══════════════════════════════════════════════════════
+function ruleSecC(){
+  const hasIll  = !!document.querySelector('[name="c_ill"]:checked');
+  const consult = gvRadio('c_consult');
+
+  // C1: no illness → dim C2 (age affected) only
+  // NOTE: c_consult (C3) stays active — it is a required field regardless
+  dimGrpSoft('c_ill_age', !hasIll);
+
+  // C3 consult logic: dim/show C4 and C5 based on yes/no answer
+  // If no illness yet — dim both (nothing to consult about)
+  if(!hasIll){
+    dimGrpSoft('c_where', true);
+    dimGrpSoft('c_no_r',  true);
+  } else {
+    // Illness present — show C4 only if consulted Yes, C5 only if No
+    dimGrpSoft('c_where', consult !== 'Yes');
+    dimGrpSoft('c_no_r',  consult !== 'No');
+  }
+
+  // C6–C9 irrelevant if no illness
+  dimGrpSoft('c_who',    !hasIll);
+  dimGrpSoft('c_accomp', !hasIll);
+  dimGrpSoft('c_meds',   !hasIll);
+  dimGrpSoft('c_drug_d', !hasIll);
+
+  // C10/C11/C12/C13 — handled by ruleDeaths(), just keep in sync (soft only)
+  const deaths = gvRadio('c_deaths');
+  dimGrpSoft('c_deaths_n', deaths !== 'Yes');
+  dimGrpSoft('c_dage',     deaths !== 'Yes');
+  dimGrpSoft('c_dcause',   deaths !== 'Yes');
+
+  // C14=No → dim C15 (nature), C16 (cause)
+  const spec = gvRadio('c_spec');
+  dimGrpSoft('c_disab',   spec !== 'Yes');
+  dimGrpSoft('c_disab_c', spec !== 'Yes');
+}
+
+// ══════════════════════════════════════════════════════
+//  SECTION D — MATERNAL & CHILD HEALTH
+// ══════════════════════════════════════════════════════
+function ruleSecD(){
+  const preg   = gvRadio('d_preg');
+  const anc    = gvRadio('d_anc');
+  const contra = gvRadio('d_contra');
+  const fp     = gvRadio('d_fp');
+
+  // D1=No (never pregnant) → dim D2–D9
+  const noPreg = preg === 'No';
+  ['d_preg_age','d_preg_n','d_anc','d_anc_s','d_anc_w','d_anc_r','d_del','d_del_r'].forEach(n=>dimGrpSoft(n, noPreg));
+
+  // D4=No ANC → dim D5, D6, D7 (only if pregnant)
+  if(!noPreg){
+    dimGrpSoft('d_anc_s', anc !== 'Yes');
+    dimGrpSoft('d_anc_w', anc !== 'Yes');
+    dimGrpSoft('d_anc_r', anc !== 'Yes');
+  }
+
+  // D11=No (not aware of FP) → dim D12, D14 (challenges irrelevant)
+  // D12 (ever used contraceptive) kept active if FP not answered yet
+  dimGrpSoft('d_contra', fp === 'No');
+  dimGrpSoft('d_fp_c',   fp === 'No');
+
+  // D12=No → dim D13 (method type)
+  const noContra = contra === 'No' || fp === 'No';
+  dimGrpSoft('d_ct', noContra);
+}
+
+// ══════════════════════════════════════════════════════
+//  SECTION E — NUTRITION & LIFESTYLE
+// ══════════════════════════════════════════════════════
+function ruleSecE(){
+  const skip   = gvRadio('e_skip');
+  const garden = gvRadio('e_garden');
+  const pref   = gvRadio('e_pref');
+  const taboo  = gvRadio('e_taboo');
+  const exer   = gvRadio('e_exer');
+  const kids   = gvRadio('e_kids');
+  const bf     = gvRadio('e_bf');
+  const ninfo  = gvRadio('e_ninfo');
+  const supp   = gvRadio('e_supp');
+
+  // E2=No → dim E3 (meals skipped), E4 (why), E5 (shortage actions)
+  dimGrpSoft('e_skip_m', skip !== 'Yes');
+  dimGrpSoft('e_skip_w', skip !== 'Yes');
+  dimGrpSoft('e_short',  skip !== 'Yes');
+
+  // E9=No → dim E10 (preferred foods), E11 (reason)
+  dimGrpSoft('e_pft', pref !== 'Yes');
+  dimGrpSoft('e_pr',  pref !== 'Yes');
+
+  // E14=No → dim E15 (productivity), E16 (crops last)
+  dimGrpSoft('e_prod',  garden !== 'Yes');
+  dimGrpSoft('e_crops', garden !== 'Yes');
+
+  // E21=No → dim taboo detail field (soft — text input)
+  const tabooGrp = document.querySelector('[name="e_taboo_d"]')?.closest('.form-group');
+  if(tabooGrp){ tabooGrp.style.opacity = taboo === 'Yes' ? '1' : '0.35'; tabooGrp.style.pointerEvents = taboo === 'Yes' ? '' : 'none'; }
+
+  // E23=No → dim E24 (exercise frequency)
+  dimGrpSoft('e_exer_f', exer !== 'Yes');
+
+  // E27=No → dim E28–E35 and detail fields
+  const noKids = kids === 'No';
+  ['e_yng','e_bf','e_bf_d','e_wean','e_wf2','e_supp','e_ninfo'].forEach(n=>dimGrpSoft(n, noKids));
+
+  // E29 breastfeeding stop reason: only relevant when kids present AND bf=No
+  dimGrpSoft('e_bf_s', noKids || bf !== 'No');
+
+  const suppGrp = document.querySelector('[name="e_supp_d"]')?.closest('.form-group');
+  const ninfoGrp = document.querySelector('[name="e_ninfo_d"]')?.closest('.form-group');
+  if(suppGrp){ suppGrp.style.opacity = (!noKids && supp==='Yes') ? '1' : '0.35'; suppGrp.style.pointerEvents = (!noKids && supp==='Yes') ? '' : 'none'; }
+  if(ninfoGrp){ ninfoGrp.style.opacity = (!noKids && ninfo==='Yes') ? '1' : '0.35'; ninfoGrp.style.pointerEvents = (!noKids && ninfo==='Yes') ? '' : 'none'; }
+
+  // Anthropometry table — dim if no kids under 5
+  const antTable = document.getElementById('anthro-table-wrap');
+  if(antTable){
+    antTable.style.opacity = noKids ? '0.3' : '1';
+    antTable.style.pointerEvents = noKids ? 'none' : '';
+  }
+}
+
+// ══════════════════════════════════════════════════════
+//  SECTION F — HIV/AIDS
+// ══════════════════════════════════════════════════════
+function ruleSecF(){
+  const tested  = gvRadio('f_tested');
+  const pay     = gvRadio('f_pay');
+  const outreach= gvRadio('f_out');
+  const famHIV  = gvRadio('f_fam_hiv');
+  const arv     = gvRadio('f_arv');
+
+  // F8=No → dim F9 (test date)
+  dimGrpSoft('f_test_d', tested !== 'Yes');
+
+  // F10=No → dim F11, F12
+  dimGrpSoft('f_arv',   famHIV !== 'Yes');
+  dimGrpSoft('f_arv_r', famHIV !== 'Yes' || arv !== 'No');
+
+  // F17=No → dim F18 (affordable), F19 (payment method)
+  dimGrpSoft('f_afford', pay !== 'Yes');
+  dimGrpSoft('f_pay_m',  pay !== 'Yes');
+
+  // F21=No → dim F22 (outreach frequency)
+  dimGrpSoft('f_out_f', outreach !== 'Yes');
+}
+
+// ══════════════════════════════════════════════════════
+//  SECTION G — SANITATION
+// ══════════════════════════════════════════════════════
+function ruleSecG(){
+  const latrine = gvRadio('g_latrine');
+  const oral    = gvRadio('g_oral');
+  const latTab  = gvRadio('g_lat_t');
+
+  // G1=No → dim latrine detail questions (g_lat_n handled by ruleLatrine)
+  const noLatrine = latrine === 'No';
+  const hasLatrine = latrine === 'Yes';
+  // dim latrine-detail fields only when no latrine
+  ['g_lat_u','g_lat_d','g_lat_wd','g_lat_p','g_lat_s','g_lat_c','g_lat_t'].forEach(n=>dimGrpSoft(n, noLatrine));
+
+  // G10 taboo detail text — dim if G10=No or no latrine
+  const tabooDetailEl = document.querySelector('[name="g_lat_td"]');
+  const tabooDetailGrp = tabooDetailEl?.closest('.form-group');
+  if(tabooDetailGrp){
+    const dimDetail = noLatrine || latTab !== 'Yes';
+    tabooDetailGrp.style.opacity = dimDetail ? '0.35' : '1';
+    tabooDetailGrp.style.pointerEvents = dimDetail ? 'none' : '';
+  }
+
+  // H5 (oral problems)=No → dim H6 (what was done)
+  dimGrpSoft('g_oral_a', oral !== 'Yes');
+}
+
+// ══════════════════════════════════════════════════════
+//  SECTION H — ENVIRONMENT & WATER
+// ══════════════════════════════════════════════════════
+function ruleSecH(){
+  // H6 (treat water)=No → dim H7 (treatment method) — already in ruleWaterTreatment
+  // Nothing extra needed here beyond existing rules
+}
+
+// ══════════════════════════════════════════════════════
+//  SECTION I — CULTURAL PRACTICES
+// ══════════════════════════════════════════════════════
+function ruleSecI(){
+  const rite    = gvRadio('i_rite');
+  const edu     = gvRadio('i_edu');
+  const birth   = gvRadio('i_birth');
+  const death   = gvRadio('i_death');
+  const bur     = gvRadio('i_bur');
+
+  // I1 ≠ Circumcision → dim I2 (who), I4 (where)
+  const noCirc = rite !== 'Circumcision';
+  dimGrpSoft('i_circ',   noCirc);
+  dimGrpSoft('i_circ_w', noCirc);
+
+  // I5=No → dim I6 (education content)
+  dimGrpSoft('i_edu_c', edu !== 'Yes');
+
+  // I13=No → dim birth detail
+  const birthGrp = document.querySelector('[name="i_birth_d"]')?.closest('.form-group');
+  if(birthGrp){ birthGrp.style.opacity = birth==='Yes'?'1':'0.35'; birthGrp.style.pointerEvents = birth==='Yes'?'':'none'; }
+
+  // I14=No → dim death ritual detail
+  const deathGrp = document.querySelector('[name="i_death_d"]')?.closest('.form-group');
+  if(deathGrp){ deathGrp.style.opacity = death==='Yes'?'1':'0.35'; deathGrp.style.pointerEvents = death==='Yes'?'':'none'; }
+
+  // I15 ≠ Other → dim other specify
+  const burGrp = document.querySelector('[name="i_bur_o"]')?.closest('.form-group');
+  if(burGrp){ burGrp.style.opacity = bur==='Other'?'1':'0.35'; burGrp.style.pointerEvents = bur==='Other'?'':'none'; }
+}
+
+
 function showFieldMsg(grp, msg, type='warn'){
   if(!grp) return;
   let el=grp.querySelector('.dyn-msg');
@@ -2359,10 +2729,20 @@ ${fg(q('D8','Where was last child delivered?')+chips(radio('d_del','Health Centr
 ${fg(q('D9','Reason for delivery location')+chips(cb('d_del_r','Safe delivery','Safe delivery')+cb('d_del_r','Staff friendly','Staff friendly')+cb('d_del_r','Distance','Distance')+cb('d_del_r','Previous exp.','Previous exp.')+cb('d_del_r','ANC advice','ANC advice')+cb('d_del_r','Mother\'s advice','Mother\'s advice')+cb('d_del_r','Spouse advice','Spouse advice')+cb('d_del_r','Other','Other')))}
 ${sub('D10. Immunization Record (Children under 5)')}
 <p class="info-note" style="margin-bottom:7px">Ask for hospital booklet and verify. PV=Pentavalent, OPV=Oral Polio Vaccine</p>
+<div id="vax-table-wrap" style="position:relative;">
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px;flex-wrap:wrap;gap:6px;">
+  <span style="font-size:0.72rem;color:var(--muted);font-weight:600">Fill verified vaccinations from booklet</span>
+  <div style="display:flex;gap:6px;flex-wrap:wrap;">
+    <button type="button" onclick="vaxQuickFillAll()" style="background:linear-gradient(135deg,var(--green),#1a4060);color:#fff;border:none;border-radius:8px;padding:6px 12px;font-family:inherit;font-size:0.74rem;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(26,92,53,.25);">⚡ All ✓ (Full)</button>
+    <button type="button" onclick="vaxQuickFillNone()" style="background:var(--cream);color:var(--muted);border:1.5px solid var(--border);border-radius:8px;padding:6px 12px;font-family:inherit;font-size:0.74rem;font-weight:700;cursor:pointer;">✗ Clear All</button>
+    <button type="button" onclick="vaxQuickFill1Child()" style="background:rgba(26,92,53,.1);color:var(--green);border:1.5px solid var(--green-light);border-radius:8px;padding:6px 12px;font-family:inherit;font-size:0.74rem;font-weight:700;cursor:pointer;">👶 1 Child ✓</button>
+  </div>
+</div>
 <div class="tbl-wrap"><table class="dt">
 <tr><th>#</th><th>Sex</th><th>DOB</th>${vax.map(v=>`<th>${v}</th>`).join('')}</tr>
 ${[1,2,3,4,5].map(i=>`<tr><td>${i}</td><td><select name="dc${i}s"><option value="">-</option><option>M</option><option>F</option></select></td><td><input type="date" name="dc${i}d"></td>${vax.map((_,j)=>`<td><select name="dc${i}v${j}"><option value="">-</option><option>✓</option><option>✗</option></select></td>`).join('')}</tr>`).join('')}
 </table></div>
+</div>
 ${fg(q('D11','Aware of family planning methods?')+chips(radio('d_fp','Yes','Yes')+radio('d_fp','No','No')))}
 ${fg(q('D12','Ever used contraceptives?')+chips(radio('d_contra','Yes','Yes')+radio('d_contra','No','No')))}
 ${fg(q('D13','Contraceptive method used')+chips(cb('d_ct','Pills','Pills')+cb('d_ct','Depo Provera','Depo Provera')+cb('d_ct','IUD','IUD')+cb('d_ct','Norplant','Norplant')+cb('d_ct','Tubal ligation','Tubal ligation')+cb('d_ct','Condoms','Condoms')+cb('d_ct','Abstinence','Abstinence')+cb('d_ct','Other','Other')))}
@@ -2406,7 +2786,7 @@ ${fg(q('E33','Weaning foods used')+chips(cb('e_wf2','Formula','Formula (Nan/Cere
 ${fg(q('E34','Clinic supplements for baby?')+chips(radio('e_supp','Yes','Yes')+radio('e_supp','No','No'))+ti('e_supp_d','If yes — specify...'))}
 ${fg(q('E35','Access to infant nutrition info?')+chips(radio('e_ninfo','Yes','Yes')+radio('e_ninfo','No','No'))+ti('e_ninfo_d','If yes — specify source...'))}
 ${sub('E36. Anthropometry — Children 0–5 Years')}
-<div class="tbl-wrap"><table class="dt">
+<div id="anthro-table-wrap" class="tbl-wrap"><table class="dt">
 <tr><th>#</th><th>Sex</th><th>DOB</th><th>Ht(cm)</th><th>Wt(kg)</th><th>MUAC</th></tr>
 ${[1,2,3,4,5,6,7].map(i=>`<tr><td>${i}</td><td><select name="ea${i}s"><option value="">-</option><option>M</option><option>F</option></select></td><td><input type="date" name="ea${i}d"></td><td><input type="number" name="ea${i}h" min="30" max="130" step="0.1" placeholder="cm"></td><td><input type="number" name="ea${i}w" min="1" max="40" step="0.1" placeholder="kg"></td><td><input type="number" name="ea${i}m" min="5" max="30" step="0.1" placeholder="cm"></td></tr>`).join('')}
 </table></div>
