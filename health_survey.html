@@ -35,6 +35,7 @@ html,body{
   font-family:'Plus Jakarta Sans',sans-serif;
   background:var(--cream);color:var(--text);font-size:16px;
   -webkit-tap-highlight-color:transparent;
+  -webkit-touch-callout:none;
   overscroll-behavior:none;
 }
 
@@ -209,6 +210,7 @@ html,body{
   user-select:none;white-space:nowrap;line-height:1;
   box-shadow:var(--shadow-sm);
   -webkit-tap-highlight-color:transparent;
+  -webkit-touch-callout:none;
 }
 .chip input:checked+label{
   background:var(--green);color:#fff;border-color:var(--green);
@@ -381,228 +383,203 @@ table.dt select{width:100%;padding:5px 4px;border:1px solid var(--border);border
 
 /* ══ WELCOME SCREEN ══════════════════════════════════ */
 #welcome-screen{
-  position:fixed;inset:0;z-index:9999;
+  position:fixed;inset:0;z-index:9999;overflow:hidden;
+  background:#080808;
+}
+#welcome-screen.hiding{animation:wcFadeOut .6s ease forwards;}
+@keyframes wcFadeOut{to{opacity:0;transform:scale(1.02);}}
+
+/* ─── PHASE 1: LAMP ROOM ─────────────────────────────── */
+#lamp-room{
+  position:absolute;inset:0;z-index:2;
+  background:#080808;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:flex-start;
+  padding-top:7vh;
+  transition:opacity .8s ease;
+  will-change:opacity;
+}
+/* green spotlight from lamp */
+#lamp-glow{
+  position:absolute;top:0;left:50%;transform:translateX(-50%);
+  width:420px;height:420px;border-radius:50%;
+  background:radial-gradient(circle,rgba(29,185,84,.18) 0%,rgba(29,185,84,.06) 40%,transparent 70%);
+  pointer-events:none;z-index:1;
+  opacity:0;transition:opacity 1.8s ease;
+}
+#floor-glow{
+  position:absolute;bottom:16%;left:50%;transform:translateX(-50%);
+  width:280px;height:50px;border-radius:50%;
+  background:radial-gradient(ellipse,rgba(29,185,84,.12) 0%,transparent 70%);
+  pointer-events:none;z-index:1;
+  opacity:0;transition:opacity 1.8s ease;
+}
+/* room dust particles */
+.room-particle{
+  position:absolute;border-radius:50%;
+  background:rgba(29,185,84,.35);
+  animation:dustFloat linear infinite;pointer-events:none;z-index:2;
+}
+@keyframes dustFloat{
+  0%  {transform:translateY(0) translateX(0);opacity:0;}
+  10% {opacity:.8;}
+  90% {opacity:.2;}
+  100%{transform:translateY(-140px) translateX(15px);opacity:0;}
+}
+
+/* LAMP */
+#lamp-wrap{
+  position:relative;z-index:3;
+  display:flex;flex-direction:column;align-items:center;
+  transform-origin:50% 0%;
+  animation:lampSwing 3s cubic-bezier(.4,0,.2,1) both;
+}
+@keyframes lampSwing{
+  0%  {transform:rotate(-30deg);}
+  28% {transform:rotate(15deg);}
+  52% {transform:rotate(-9deg);}
+  70% {transform:rotate(4deg);}
+  84% {transform:rotate(-2deg);}
+  100%{transform:rotate(0deg);}
+}
+.lamp-cord{width:3px;height:90px;background:linear-gradient(180deg,#666,#444);border-radius:2px;}
+.lamp-shade{width:120px;height:76px;margin-top:-2px;position:relative;}
+.lamp-shade svg{width:100%;height:100%;}
+.lamp-base-pole{width:7px;height:110px;background:linear-gradient(180deg,#bbb,#888);border-radius:3px;margin-top:-2px;}
+.lamp-base{width:86px;height:14px;background:linear-gradient(180deg,#bbb,#999);border-radius:7px;margin-top:-1px;}
+/* pull bead */
+.lamp-pull{position:absolute;bottom:-22px;left:50%;transform:translateX(-50%);width:2px;height:26px;background:linear-gradient(180deg,#888,#555);border-radius:1px;}
+.lamp-pull::after{
+  content:'';position:absolute;bottom:-7px;left:50%;transform:translateX(-50%);
+  width:12px;height:12px;border-radius:50%;
+  background:radial-gradient(circle,#1DB954,#0f7a35);
+  box-shadow:0 0 8px rgba(29,185,84,.8);
+  animation:pullBob 2s ease-in-out infinite;
+}
+@keyframes pullBob{0%,100%{transform:translateX(-50%) translateY(0);}50%{transform:translateX(-50%) translateY(5px);}}
+
+/* scroll hint */
+#pull-text{
+  position:relative;z-index:3;margin-top:24px;text-align:center;
+  color:rgba(255,255,255,.45);font-size:.8rem;font-weight:600;
+  letter-spacing:2.5px;text-transform:uppercase;
+  animation:pullPulse 2.2s ease-in-out infinite;
+}
+@keyframes pullPulse{0%,100%{opacity:.45;}50%{opacity:.9;}}
+#pull-hint{display:block;font-size:.63rem;color:rgba(255,255,255,.22);margin-top:5px;font-style:italic;font-weight:400;text-transform:none;letter-spacing:.5px;}
+
+/* invisible tap/click zone */
+#pull-btn{position:absolute;top:0;left:50%;transform:translateX(-50%);width:200px;height:340px;z-index:10;cursor:pointer;background:transparent;border:none;outline:none;-webkit-tap-highlight-color:transparent;}
+
+/* ─── AUTH OVERLAY (on same page, fades in over lamp) ── */
+#lamp-auth{
+  position:absolute;inset:0;z-index:5;
   display:flex;flex-direction:column;
   align-items:center;justify-content:center;
-  padding:0;overflow:hidden;
-  background:#060e0a;
+  padding:20px 16px 0;
+  /* dark overlay so app underneath NEVER shows */
+  background:rgba(6,8,6,0);
+  opacity:0;pointer-events:none;
+  transition:opacity 1.6s ease, background 1.6s ease;
+  will-change:opacity;
 }
-#welcome-screen.hiding{
-  animation:wcFadeOut 0.55s cubic-bezier(.4,0,.2,1) forwards;
-}
-@keyframes wcFadeOut{
-  to{opacity:0;transform:scale(1.04);}
-}
-
-/* Deep layered background */
-.wc-bg{
-  position:absolute;inset:0;
-  background:
-    radial-gradient(ellipse 80% 60% at 20% 0%, rgba(26,92,53,.7) 0%, transparent 60%),
-    radial-gradient(ellipse 60% 80% at 80% 100%, rgba(26,64,96,.8) 0%, transparent 60%),
-    radial-gradient(ellipse 100% 100% at 50% 50%, #0a1f12 0%, #060e0a 100%);
+#lamp-auth.open{
+  opacity:1;pointer-events:all;
+  background:rgba(6,8,6,0.72);
 }
 
-/* Animated mesh lines */
-.wc-mesh{
-  position:absolute;inset:0;
-  background-image:
-    linear-gradient(rgba(61,184,106,.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(61,184,106,.04) 1px, transparent 1px);
-  background-size:44px 44px;
-  animation:meshScroll 20s linear infinite;
-}
-@keyframes meshScroll{
-  to{background-position:44px 44px;}
-}
+.auth-hdr{text-align:center;margin-bottom:16px;}
+.auth-hdr-logo{font-size:32px;margin-bottom:6px;}
+.auth-hdr-title{color:#fff;font-size:1.05rem;font-weight:800;letter-spacing:-.02em;margin-bottom:3px;}
+.auth-hdr-sub{color:rgba(29,185,84,.7);font-size:.68rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;}
 
-/* Glow orbs */
-.wc-orb{position:absolute;border-radius:50%;filter:blur(60px);pointer-events:none;animation:orbDrift ease-in-out infinite alternate;}
-.wc-orb1{width:300px;height:300px;background:rgba(26,92,53,.35);top:-80px;right:-80px;animation-duration:8s;}
-.wc-orb2{width:260px;height:260px;background:rgba(26,64,96,.4);bottom:-60px;left:-60px;animation-duration:11s;animation-delay:-3s;}
-.wc-orb3{width:160px;height:160px;background:rgba(61,184,106,.12);top:45%;left:5%;animation-duration:7s;animation-delay:-1s;}
-.wc-orb4{width:100px;height:100px;background:rgba(100,160,220,.1);bottom:30%;right:8%;animation-duration:9s;animation-delay:-5s;}
-@keyframes orbDrift{
-  from{transform:translate(0,0) scale(1);}
-  to{transform:translate(20px,-28px) scale(1.1);}
-}
-
-/* Particles */
-.wc-particles{position:absolute;inset:0;overflow:hidden;pointer-events:none;}
-.wc-particle{
-  position:absolute;border-radius:50%;
-  background:rgba(255,255,255,.35);
-  animation:particleRise linear infinite;
-}
-@keyframes particleRise{
-  0%  {transform:translateY(100vh) scale(0);opacity:0;}
-  8%  {opacity:.8;}
-  92% {opacity:.2;}
-  100%{transform:translateY(-40px) scale(1.2);opacity:0;}
-}
-
-/* Main content area */
-.wc-content{
-  position:relative;z-index:2;
-  display:flex;flex-direction:column;
-  align-items:center;
-  padding:0 28px;
-  width:100%;max-width:360px;
-}
-
-/* Logo — premium badge */
-.wc-logo{
-  width:88px;height:88px;border-radius:28px;
-  background:linear-gradient(135deg,rgba(26,92,53,.6),rgba(26,64,96,.6));
-  display:flex;align-items:center;justify-content:center;
-  font-size:42px;margin-bottom:24px;
-  border:1px solid rgba(255,255,255,.15);
-  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
-  box-shadow:0 0 0 1px rgba(61,184,106,.2),0 8px 40px rgba(0,0,0,.4),0 0 60px rgba(26,92,53,.3);
-  animation:logoBreathe 4s ease-in-out infinite;
-}
-@keyframes logoBreathe{
-  0%,100%{box-shadow:0 0 0 1px rgba(61,184,106,.2),0 8px 40px rgba(0,0,0,.4),0 0 60px rgba(26,92,53,.3);}
-  50%{box-shadow:0 0 0 1px rgba(61,184,106,.4),0 8px 40px rgba(0,0,0,.4),0 0 90px rgba(61,184,106,.25);}
-}
-
-/* Eyebrow text */
-.wc-eyebrow{
-  color:rgba(61,184,106,.8);
-  font-size:0.65rem;font-weight:800;
-  letter-spacing:3px;text-transform:uppercase;
-  margin-bottom:10px;
-}
-
-/* Main title */
-.wc-title{
-  color:#fff;font-size:2rem;font-weight:800;
-  line-height:1.1;margin-bottom:8px;
-  text-align:center;letter-spacing:-.04em;
-  text-shadow:0 2px 20px rgba(0,0,0,.5);
-}
-
-/* Divider line */
-.wc-divider{
-  width:40px;height:2px;
-  background:linear-gradient(90deg,transparent,rgba(61,184,106,.7),transparent);
-  margin:10px auto 12px;border-radius:99px;
-}
-
-/* Subtitle */
-.wc-subtitle{
-  color:rgba(255,255,255,.5);font-size:0.78rem;
-  line-height:1.6;text-align:center;margin-bottom:0;
-}
-
-/* Greeting line */
-.wc-greeting{
-  color:rgba(255,255,255,.7);
-  font-size:0.82rem;font-weight:600;
-  letter-spacing:.5px;margin-bottom:6px;text-align:center;
-}
-
-/* Glass card */
-.wc-glass{
-  background:rgba(255,255,255,.05);
-  border:1px solid rgba(255,255,255,.1);
-  border-radius:24px;
-  padding:26px 24px 22px;
-  text-align:center;
-  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
-  width:100%;
-  box-shadow:0 8px 40px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.08);
-  margin-bottom:22px;
-}
-
-/* Name setup */
-#wc-name-setup{display:none;margin-top:16px;}
-#wc-name-input{
-  width:100%;padding:13px 16px;
-  background:rgba(255,255,255,.08);
-  border:1px solid rgba(255,255,255,.18);
-  border-radius:12px;color:#fff;
-  font-family:inherit;font-size:0.95rem;
-  text-align:center;outline:none;margin-bottom:10px;
-  transition:all .2s;
-}
-#wc-name-input::placeholder{color:rgba(255,255,255,.3);}
-#wc-name-input:focus{border-color:rgba(61,184,106,.6);background:rgba(255,255,255,.12);}
-.wc-save-btn{
-  width:100%;padding:13px;
-  background:linear-gradient(135deg,rgba(26,92,53,.7),rgba(26,64,96,.7));
-  border:1px solid rgba(61,184,106,.4);
-  border-radius:12px;color:#fff;
-  font-family:inherit;font-size:0.9rem;font-weight:700;
-  cursor:pointer;transition:all .2s;
-  box-shadow:0 4px 16px rgba(0,0,0,.3);
-}
-.wc-save-btn:active{transform:scale(0.97);}
-
-/* Dots */
-@keyframes dotBounce{
-  0%,80%,100%{transform:translateY(0);opacity:.4;}
-  40%{transform:translateY(-10px);opacity:1;}
-}
-.wc-dots{display:flex;gap:6px;margin-bottom:28px;position:relative;z-index:2;}
-.wc-dot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.4);animation:dotBounce 1.5s infinite ease;}
-.wc-dot:nth-child(2){animation-delay:.2s;}
-.wc-dot:nth-child(3){animation-delay:.4s;}
-
-/* Enter button */
-@keyframes enterPulse{
-  0%,100%{box-shadow:0 6px 30px rgba(0,0,0,.3),0 0 0 0 rgba(61,184,106,0);}
-  50%{box-shadow:0 10px 40px rgba(0,0,0,.35),0 0 0 8px rgba(61,184,106,.12);}
-}
-.wc-enter{
-  background:linear-gradient(135deg,#3db86a,#2a9054);
-  color:#fff;border:none;border-radius:99px;
-  padding:16px 40px;
-  font-family:inherit;font-size:1rem;font-weight:800;
-  cursor:pointer;letter-spacing:.2px;
-  animation:enterPulse 2.8s ease infinite;
-  position:relative;z-index:2;
-  display:flex;align-items:center;gap:9px;
-  box-shadow:0 6px 30px rgba(61,184,106,.3);
-}
-.wc-enter:active{transform:scale(0.96);}
-@keyframes arrowRight{0%,100%{transform:translateX(0);}50%{transform:translateX(5px);}}
-.wc-arrow{display:inline-block;animation:arrowRight 1.3s ease infinite;font-style:normal;}
-
-/* Stats strip — shown if returning user */
-.wc-stats-strip{
-  display:flex;gap:14px;margin-top:16px;
-  justify-content:center;
-}
-.wc-stat{
-  text-align:center;
-}
-.wc-stat-n{color:#fff;font-size:1.1rem;font-weight:800;}
-.wc-stat-l{color:rgba(255,255,255,.4);font-size:0.58rem;font-weight:600;text-transform:uppercase;letter-spacing:.8px;margin-top:1px;}
-.wc-stat-div{width:1px;background:rgba(255,255,255,.12);align-self:stretch;margin:4px 0;}
-
-/* Footer strip */
-.wc-credit{
+/* footer inside auth overlay */
+.auth-footer{
   position:absolute;bottom:0;left:0;right:0;
-  background:rgba(0,0,0,.4);
-  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
-  padding:11px 20px calc(11px + env(safe-area-inset-bottom));
-  text-align:center;z-index:2;
-  border-top:1px solid rgba(255,255,255,.05);
+  padding:10px 20px calc(10px + env(safe-area-inset-bottom));
+  text-align:center;
+  background:rgba(0,0,0,.55);
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  border-top:1px solid rgba(255,255,255,.06);
+  opacity:0;transition:opacity 2.2s ease;
 }
-.wc-built{color:rgba(255,255,255,.35);font-size:0.67rem;letter-spacing:.3px;margin-bottom:4px;}
-.wc-built strong{color:rgba(255,255,255,.65);}
-.wc-tagline{color:rgba(255,255,255,.25);font-size:0.62rem;font-style:italic;margin-bottom:6px;}
-.wc-donate{
-  display:inline-flex;align-items:center;gap:5px;
-  background:rgba(255,255,255,.06);
-  border:1px solid rgba(255,255,255,.12);
-  border-radius:99px;padding:5px 14px;
-  color:rgba(255,255,255,.5);font-size:0.68rem;font-weight:600;
-  cursor:pointer;transition:all .2s;
+#lamp-auth.open .auth-footer{opacity:1;}
+.auth-footer-built{color:rgba(255,255,255,.28);font-size:.62rem;letter-spacing:.3px;margin-bottom:3px;}
+.auth-footer-built strong{color:rgba(255,255,255,.55);}
+.auth-footer-tagline{color:rgba(255,255,255,.13);font-size:.58rem;font-style:italic;margin-bottom:5px;}
+.auth-footer-donate{
+  display:inline-flex;align-items:center;gap:4px;
+  background:rgba(29,185,84,.07);border:1px solid rgba(29,185,84,.2);
+  border-radius:99px;padding:4px 12px;
+  color:rgba(29,185,84,.65);font-size:.63rem;font-weight:600;
+  cursor:pointer;text-decoration:none;
 }
-.wc-donate:active{background:rgba(255,255,255,.14);}
+
+/* ─── LOADER SCREEN (after sign-in) ──────────────────── */
+#loader-screen{
+  position:absolute;inset:0;z-index:14;
+  background:#121212;
+  display:flex;flex-direction:column;
+  justify-content:center;align-items:center;
+  text-align:center;padding:32px 28px;
+  font-family:'Plus Jakarta Sans',Arial,sans-serif;
+  /* starts invisible — transitions in smoothly */
+  opacity:0;pointer-events:none;
+  transition:opacity .65s ease;
+  will-change:opacity;
+}
+#loader-screen.open{opacity:1;pointer-events:all;}
+#loader-screen.out{
+  opacity:0;pointer-events:none;
+  transition:opacity .5s ease;
+}
+@keyframes lsFadeOut{to{opacity:0;}}
+
+.ls-title{color:#1DB954;font-size:1.35rem;font-weight:800;margin-bottom:5px;letter-spacing:-.02em;}
+.ls-sub{color:rgba(255,255,255,.32);font-size:.7rem;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:22px;}
+/* ECG wrapper — animation removed when stopped */
+.ls-ecg{width:260px;height:80px;margin-bottom:22px;overflow:hidden;}
+.ls-ecg path{
+  stroke:#1DB954;stroke-width:3;fill:none;
+  stroke-dasharray:500;stroke-dashoffset:500;
+  filter:drop-shadow(0 0 6px rgba(29,185,84,.7));
+}
+.ls-ecg path.running{animation:lsHeartbeat 2s linear infinite;}
+.ls-ecg path.stopped{animation:none;stroke-dashoffset:0;opacity:.3;}
+@keyframes lsHeartbeat{0%{stroke-dashoffset:500;}100%{stroke-dashoffset:0;}}
+.ls-loading{font-size:.85rem;opacity:.7;margin-bottom:8px;min-height:20px;transition:color .3s;}
+#ls-percent{font-size:1.1rem;margin-bottom:16px;color:#1DB954;font-weight:700;}
+.ls-prog-wrap{width:220px;height:8px;background:#2a2a2a;border-radius:10px;overflow:hidden;margin-bottom:28px;}
+.ls-prog-bar{height:100%;width:0%;background:#1DB954;border-radius:10px;box-shadow:0 0 10px #1DB954;transition:width .18s linear;}
+#ls-begin{
+  background:#1DB954;border:none;color:#fff;
+  padding:14px 32px;font-size:1rem;font-weight:700;
+  border-radius:30px;cursor:pointer;display:none;font-family:inherit;
+  animation:lsBtnPulse 2s ease infinite;transition:background .2s;
+}
+#ls-begin:hover{background:#1ed760;}
+@keyframes lsBtnPulse{0%,100%{box-shadow:0 0 0 0 rgba(29,185,84,.4);}50%{box-shadow:0 0 0 10px rgba(29,185,84,0);}}
+/* countdown ring */
+#ls-countdown{
+  font-size:.72rem;color:rgba(255,255,255,.35);
+  margin-top:10px;letter-spacing:.5px;display:none;
+}
+
+/* loader footer */
+.ls-footer{
+  position:absolute;bottom:0;left:0;right:0;
+  background:rgba(0,0,0,.5);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  padding:10px 20px calc(10px + env(safe-area-inset-bottom));
+  text-align:center;border-top:1px solid rgba(255,255,255,.05);
+}
+.ls-built{color:rgba(255,255,255,.28);font-size:.64rem;letter-spacing:.3px;margin-bottom:3px;}
+.ls-built strong{color:rgba(255,255,255,.55);}
+.ls-tagline{color:rgba(255,255,255,.16);font-size:.59rem;font-style:italic;margin-bottom:5px;}
+.ls-donate{display:inline-flex;align-items:center;gap:5px;background:rgba(29,185,84,.07);border:1px solid rgba(29,185,84,.18);border-radius:99px;padding:4px 13px;color:rgba(29,185,84,.65);font-size:.64rem;font-weight:600;cursor:pointer;text-decoration:none;}
 /* ══ END WELCOME ══════════════════════════════════════ */
+
+
+
 
 @media print{
   .topbar,.bot-nav,.ov,.drawer,.toast,.modal-ov,#support-fab,#support-prompt{display:none!important;}
@@ -618,239 +595,188 @@ table.dt select{width:100%;padding:5px 4px;border:1px solid var(--border);border
 <body>
 
 <!-- ═══════════════════════════════════════════════════ -->
-<!--  WELCOME SCREEN — Premium                          -->
+<!--  ENTRANCE SEQUENCE                                  -->
 <!-- ═══════════════════════════════════════════════════ -->
 <div id="welcome-screen">
 
-  <!-- Auth Gate -->
-  <div id="wc-auth" style="display:none;position:absolute;inset:0;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px 16px;">
+  <!-- ══ PHASE 1: LAMP ROOM ══ -->
+  <div id="lamp-room">
+    <div id="lamp-glow"></div>
+    <div id="floor-glow"></div>
+    <div id="dust-container"></div>
 
-    <!-- Split card container -->
-    <div id="auth-card-wrap" style="width:100%;max-width:360px;border-radius:20px;overflow:hidden;box-shadow:0 16px 60px rgba(0,0,0,.5);position:relative;background:#111a14;">
+    <!-- Swinging lamp -->
+    <div id="lamp-wrap">
+      <div class="lamp-cord"></div>
+      <div class="lamp-shade">
+        <svg viewBox="0 0 120 76" xmlns="http://www.w3.org/2000/svg">
+          <ellipse cx="60" cy="70" rx="57" ry="7" fill="rgba(0,0,0,.2)"/>
+          <path d="M10,67 Q20,8 60,4 Q100,8 110,67 Z" fill="url(#sg2)" stroke="rgba(255,255,255,.1)" stroke-width="1"/>
+          <path d="M18,63 Q26,14 60,10 Q94,14 102,63 Z" fill="url(#ig2)" id="shade-inner"/>
+          <ellipse cx="60" cy="67" rx="49" ry="5" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="1.5"/>
+          <ellipse cx="60" cy="5" rx="11" ry="4" fill="#777"/>
+          <defs>
+            <linearGradient id="sg2" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stop-color="#c0c0b8"/>
+              <stop offset="100%" stop-color="#eeeeea"/>
+            </linearGradient>
+            <radialGradient id="ig2" cx="50%" cy="80%" r="60%">
+              <stop offset="0%" stop-color="rgba(29,185,84,0)" id="glow-stop"/>
+              <stop offset="100%" stop-color="rgba(29,185,84,0)"/>
+            </radialGradient>
+          </defs>
+        </svg>
+        <div class="lamp-pull"></div>
+      </div>
+      <div class="lamp-base-pole"></div>
+      <div class="lamp-base"></div>
+    </div>
 
-      <!-- The sliding track — holds both states side by side -->
+    <div id="pull-text">
+      Scroll down to enter
+      <span id="pull-hint">or tap the lamp to switch on the light</span>
+    </div>
+
+    <div id="pull-btn" role="button" aria-label="Pull lamp to enter" tabindex="0"></div>
+  </div>
+
+  <!-- ══ PHASE 2: AUTH (overlays lamp, fades in) ══ -->
+  <div id="lamp-auth">
+    <div class="auth-hdr">
+      <div class="auth-hdr-logo">🏥</div>
+      <div class="auth-hdr-title">Community Health Survey</div>
+      <div class="auth-hdr-sub">Great Lakes University · Nyamache</div>
+    </div>
+
+    <!-- Sign In / Register card -->
+    <div id="auth-card-wrap" style="width:100%;max-width:360px;border-radius:20px;overflow:hidden;box-shadow:0 20px 70px rgba(0,0,0,.7);position:relative;background:#0e160f;">
       <div id="auth-track" style="display:flex;width:200%;transition:transform .45s cubic-bezier(.77,0,.18,1);will-change:transform;">
 
-        <!-- ══ STATE 1: SIGN IN ══ -->
-        <div style="width:50%;flex-shrink:0;display:flex;min-height:420px;">
-
-          <!-- Left: Form side -->
-          <div style="flex:1;padding:28px 22px;display:flex;flex-direction:column;justify-content:center;background:#111a14;">
-            <div style="color:#fff;font-size:1.3rem;font-weight:800;margin-bottom:4px;letter-spacing:-.02em;">Sign In</div>
-            <div style="color:rgba(255,255,255,.3);font-size:0.72rem;margin-bottom:22px;">Health Survey System</div>
+        <!-- SIGN IN -->
+        <div style="width:50%;flex-shrink:0;display:flex;min-height:380px;">
+          <div style="flex:1;padding:26px 20px;display:flex;flex-direction:column;justify-content:center;background:#0e160f;">
+            <div style="color:#fff;font-size:1.2rem;font-weight:800;margin-bottom:3px;letter-spacing:-.02em;">Sign In</div>
+            <div style="color:rgba(255,255,255,.28);font-size:.7rem;margin-bottom:20px;">Health Survey System</div>
             <input id="auth-reg-login" type="text" placeholder="Staff / ID number"
-              style="width:100%;padding:0;background:transparent;border:none;border-bottom:1.5px solid rgba(255,255,255,.18);color:#fff;font-family:inherit;font-size:0.88rem;outline:none;margin-bottom:20px;padding-bottom:10px;letter-spacing:.3px;transition:border-color .2s;"
+              style="width:100%;padding:0;background:transparent;border:none;border-bottom:1.5px solid rgba(255,255,255,.15);color:#fff;font-family:inherit;font-size:.88rem;outline:none;margin-bottom:18px;padding-bottom:10px;letter-spacing:.3px;transition:border-color .2s;"
               oninput="this.value=this.value.toUpperCase()"
-              onfocus="this.style.borderBottomColor='#3db86a'"
-              onblur="this.style.borderBottomColor='rgba(255,255,255,.18)'"
+              onfocus="this.style.borderBottomColor='#1DB954'"
+              onblur="this.style.borderBottomColor='rgba(255,255,255,.15)'"
               onkeydown="if(event.key==='Enter')authLogin()">
-            <button onclick="authLogin()" style="width:100%;padding:13px;background:linear-gradient(135deg,#3db86a,#1a8048);color:#fff;border:none;border-radius:8px;font-family:inherit;font-size:0.9rem;font-weight:800;cursor:pointer;letter-spacing:.3px;box-shadow:0 4px 18px rgba(61,184,106,.4);margin-bottom:16px;">
+            <button onclick="authLogin()" style="width:100%;padding:13px;background:linear-gradient(135deg,#1DB954,#0f7a35);color:#fff;border:none;border-radius:8px;font-family:inherit;font-size:.9rem;font-weight:800;cursor:pointer;letter-spacing:.3px;box-shadow:0 4px 18px rgba(29,185,84,.35);margin-bottom:14px;">
               Sign In
             </button>
-            <div style="text-align:center;font-size:0.72rem;color:rgba(255,255,255,.35);">
-              New here? <span onclick="authShowTab('register')" style="color:#3db86a;font-weight:700;cursor:pointer;">Register</span>
+            <div style="text-align:center;font-size:.7rem;color:rgba(255,255,255,.3);">
+              New here? <span onclick="authShowTab('register')" style="color:#1DB954;font-weight:700;cursor:pointer;">Register</span>
             </div>
-            <div id="auth-login-msg" style="margin-top:10px;font-size:0.74rem;text-align:center;min-height:16px;"></div>
+            <div id="auth-login-msg" style="margin-top:10px;font-size:.73rem;text-align:center;min-height:16px;"></div>
           </div>
-
-          <!-- Right: Welcome panel with diagonal clip -->
-          <div style="width:140px;flex-shrink:0;position:relative;overflow:hidden;background:linear-gradient(160deg,#1a5c35 0%,#0d3320 60%,#0a1828 100%);">
-            <!-- Diagonal cut -->
-            <div style="position:absolute;inset:0;background:#111a14;clip-path:polygon(0 0,40% 0,0% 100%);"></div>
-            <div style="position:relative;z-index:1;padding:24px 14px;display:flex;flex-direction:column;justify-content:center;height:100%;text-align:right;">
-              <div style="color:#fff;font-size:1rem;font-weight:800;line-height:1.2;margin-bottom:8px;">WELCOME<br>BACK!</div>
-              <div style="color:rgba(255,255,255,.5);font-size:0.65rem;line-height:1.55;">Sign in to continue your survey work.</div>
+          <div style="width:115px;flex-shrink:0;position:relative;overflow:hidden;background:linear-gradient(160deg,#1a5c35 0%,#0d3320 60%,#0a1828 100%);">
+            <div style="position:absolute;inset:0;background:#0e160f;clip-path:polygon(0 0,42% 0,0% 100%);"></div>
+            <div style="position:relative;z-index:1;padding:22px 12px;display:flex;flex-direction:column;justify-content:center;height:100%;text-align:right;">
+              <div style="color:#fff;font-size:.92rem;font-weight:800;line-height:1.25;margin-bottom:8px;">WELCOME<br>BACK!</div>
+              <div style="color:rgba(255,255,255,.4);font-size:.62rem;line-height:1.55;">Sign in to continue your work.</div>
             </div>
           </div>
-
         </div>
 
-        <!-- ══ STATE 2: REGISTER ══ -->
-        <div style="width:50%;flex-shrink:0;display:flex;min-height:420px;">
-
-          <!-- Left: Welcome panel with diagonal clip (mirrored) -->
-          <div style="width:130px;flex-shrink:0;position:relative;overflow:hidden;background:linear-gradient(160deg,#0a1828 0%,#0d3320 40%,#1a5c35 100%);">
-            <div style="position:absolute;inset:0;background:#111a14;clip-path:polygon(100% 0,60% 0,100% 100%);"></div>
-            <div style="position:relative;z-index:1;padding:24px 14px;display:flex;flex-direction:column;justify-content:center;height:100%;text-align:left;">
-              <div style="color:#fff;font-size:1rem;font-weight:800;line-height:1.2;margin-bottom:8px;">JOIN<br>THE<br>TEAM!</div>
-              <div style="color:rgba(255,255,255,.5);font-size:0.65rem;line-height:1.55;">Register to get started instantly.</div>
+        <!-- REGISTER -->
+        <div style="width:50%;flex-shrink:0;display:flex;min-height:380px;">
+          <div style="width:115px;flex-shrink:0;position:relative;overflow:hidden;background:linear-gradient(160deg,#0a1828 0%,#0d3320 40%,#1a5c35 100%);">
+            <div style="position:absolute;inset:0;background:#0e160f;clip-path:polygon(100% 0,58% 0,100% 100%);"></div>
+            <div style="position:relative;z-index:1;padding:22px 12px;display:flex;flex-direction:column;justify-content:center;height:100%;text-align:left;">
+              <div style="color:#fff;font-size:.92rem;font-weight:800;line-height:1.25;margin-bottom:8px;">JOIN<br>THE<br>TEAM!</div>
+              <div style="color:rgba(255,255,255,.4);font-size:.62rem;line-height:1.55;">Register to get started.</div>
             </div>
           </div>
-
-          <!-- Right: Form side -->
-          <div style="flex:1;padding:24px 18px;display:flex;flex-direction:column;justify-content:center;background:#111a14;">
-            <div style="color:#fff;font-size:1.2rem;font-weight:800;margin-bottom:4px;letter-spacing:-.02em;">Register</div>
-            <div style="color:rgba(255,255,255,.3);font-size:0.7rem;margin-bottom:18px;">Get access immediately</div>
+          <div style="flex:1;padding:22px 16px;display:flex;flex-direction:column;justify-content:center;background:#0e160f;">
+            <div style="color:#fff;font-size:1.1rem;font-weight:800;margin-bottom:3px;letter-spacing:-.02em;">Register</div>
+            <div style="color:rgba(255,255,255,.28);font-size:.68rem;margin-bottom:14px;">Get access immediately</div>
             <input id="auth-reg-num" type="text" placeholder="Staff / ID number"
-              style="width:100%;padding:0;background:transparent;border:none;border-bottom:1.5px solid rgba(255,255,255,.18);color:#fff;font-family:inherit;font-size:0.85rem;outline:none;margin-bottom:16px;padding-bottom:9px;transition:border-color .2s;"
+              style="width:100%;padding:0;background:transparent;border:none;border-bottom:1.5px solid rgba(255,255,255,.15);color:#fff;font-family:inherit;font-size:.82rem;outline:none;margin-bottom:12px;padding-bottom:8px;transition:border-color .2s;"
               oninput="this.value=this.value.toUpperCase()"
-              onfocus="this.style.borderBottomColor='#3db86a'"
-              onblur="this.style.borderBottomColor='rgba(255,255,255,.18)'">
+              onfocus="this.style.borderBottomColor='#1DB954'"
+              onblur="this.style.borderBottomColor='rgba(255,255,255,.15)'">
             <input id="auth-full-name" type="text" placeholder="Full name"
-              style="width:100%;padding:0;background:transparent;border:none;border-bottom:1.5px solid rgba(255,255,255,.18);color:#fff;font-family:inherit;font-size:0.85rem;outline:none;margin-bottom:16px;padding-bottom:9px;transition:border-color .2s;"
-              onfocus="this.style.borderBottomColor='#3db86a'"
-              onblur="this.style.borderBottomColor='rgba(255,255,255,.18)'">
+              style="width:100%;padding:0;background:transparent;border:none;border-bottom:1.5px solid rgba(255,255,255,.15);color:#fff;font-family:inherit;font-size:.82rem;outline:none;margin-bottom:12px;padding-bottom:8px;transition:border-color .2s;"
+              onfocus="this.style.borderBottomColor='#1DB954'"
+              onblur="this.style.borderBottomColor='rgba(255,255,255,.15)'">
             <input id="auth-email" type="email" placeholder="Email (optional)"
-              style="width:100%;padding:0;background:transparent;border:none;border-bottom:1.5px solid rgba(255,255,255,.18);color:#fff;font-family:inherit;font-size:0.85rem;outline:none;margin-bottom:20px;padding-bottom:9px;transition:border-color .2s;"
-              onfocus="this.style.borderBottomColor='#3db86a'"
-              onblur="this.style.borderBottomColor='rgba(255,255,255,.18)'">
-            <button onclick="authRegister()" style="width:100%;padding:12px;background:linear-gradient(135deg,#3db86a,#1a8048);color:#fff;border:none;border-radius:8px;font-family:inherit;font-size:0.88rem;font-weight:800;cursor:pointer;box-shadow:0 4px 18px rgba(61,184,106,.35);margin-bottom:14px;">
-              Register & Enter
+              style="width:100%;padding:0;background:transparent;border:none;border-bottom:1.5px solid rgba(255,255,255,.15);color:#fff;font-family:inherit;font-size:.82rem;outline:none;margin-bottom:16px;padding-bottom:8px;transition:border-color .2s;"
+              onfocus="this.style.borderBottomColor='#1DB954'"
+              onblur="this.style.borderBottomColor='rgba(255,255,255,.15)'">
+            <button onclick="authRegister()" style="width:100%;padding:11px;background:linear-gradient(135deg,#1DB954,#0f7a35);color:#fff;border:none;border-radius:8px;font-family:inherit;font-size:.84rem;font-weight:800;cursor:pointer;box-shadow:0 4px 16px rgba(29,185,84,.3);margin-bottom:10px;">
+              Register &amp; Enter
             </button>
-            <div style="text-align:center;font-size:0.72rem;color:rgba(255,255,255,.35);">
-              Already registered? <span onclick="authShowTab('login')" style="color:#3db86a;font-weight:700;cursor:pointer;">Sign In</span>
+            <div style="text-align:center;font-size:.68rem;color:rgba(255,255,255,.3);">
+              Already registered? <span onclick="authShowTab('login')" style="color:#1DB954;font-weight:700;cursor:pointer;">Sign In</span>
             </div>
-            <div id="auth-register-msg" style="margin-top:8px;font-size:0.74rem;text-align:center;min-height:16px;"></div>
+            <div id="auth-register-msg" style="margin-top:7px;font-size:.71rem;text-align:center;min-height:16px;"></div>
           </div>
-
         </div>
 
-      </div><!-- end auth-track -->
-
-      <!-- Tab indicator bar at bottom -->
-      <div id="auth-tabs" style="display:flex;background:rgba(0,0,0,.3);">
+      </div>
+      <div id="auth-tabs" style="display:flex;background:rgba(0,0,0,.4);">
         <button onclick="authShowTab('login')" id="auth-tab-login"
-          style="flex:1;padding:11px;border:none;background:rgba(61,184,106,.15);color:#3db86a;font-family:inherit;font-size:0.8rem;font-weight:700;cursor:pointer;border-top:2px solid #3db86a;transition:all .25s;">
-          Sign In
-        </button>
+          style="flex:1;padding:10px;border:none;background:rgba(29,185,84,.1);color:#1DB954;font-family:inherit;font-size:.77rem;font-weight:700;cursor:pointer;border-top:2px solid #1DB954;transition:all .25s;">Sign In</button>
         <button onclick="authShowTab('register')" id="auth-tab-register"
-          style="flex:1;padding:11px;border:none;background:transparent;color:rgba(255,255,255,.3);font-family:inherit;font-size:0.8rem;font-weight:700;cursor:pointer;border-top:2px solid transparent;transition:all .25s;">
-          Register
-        </button>
-      </div>
-
-    </div><!-- end auth-card-wrap -->
-
-    <!-- REMOVED / BLOCKED panel -->
-    <div id="auth-panel-pending" style="display:none;width:100%;max-width:360px;text-align:center;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.11);border-radius:20px;padding:28px 22px;backdrop-filter:blur(20px);">
-      <div style="font-size:44px;margin-bottom:12px;">🚫</div>
-      <div style="color:#fff;font-weight:800;font-size:1rem;margin-bottom:8px;">Access Removed</div>
-      <div style="color:rgba(255,255,255,.5);font-size:0.78rem;line-height:1.6;margin-bottom:20px;">Your access has been removed. Please contact the coordinator to be re-added.</div>
-      <button onclick="authClearAndRetry()" style="width:100%;padding:12px;background:rgba(255,255,255,.08);color:rgba(255,255,255,.7);border:1px solid rgba(255,255,255,.15);border-radius:10px;font-family:inherit;font-size:0.85rem;font-weight:600;cursor:pointer;">← Try Different Account</button>
-    </div>
-
-    <div id="auth-panel-rejected" style="display:none;width:100%;max-width:360px;text-align:center;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.11);border-radius:20px;padding:28px 22px;backdrop-filter:blur(20px);">
-      <div style="font-size:44px;margin-bottom:12px;">🚫</div>
-      <div style="color:#fff;font-weight:800;font-size:1rem;margin-bottom:8px;">Access Removed</div>
-      <div style="color:rgba(255,255,255,.5);font-size:0.78rem;line-height:1.6;margin-bottom:20px;">Your access has been removed. Please contact the coordinator to be re-added.</div>
-      <button onclick="authClearAndRetry()" style="width:100%;padding:12px;background:rgba(255,255,255,.08);color:rgba(255,255,255,.7);border:1px solid rgba(255,255,255,.15);border-radius:10px;font-family:inherit;font-size:0.85rem;font-weight:600;cursor:pointer;">← Try Different Account</button>
-    </div>
-
-    <!-- Offline note -->
-    <div id="auth-offline-note" style="display:none;margin-top:12px;width:100%;max-width:360px;padding:11px 14px;background:rgba(230,81,0,.2);border:1px solid rgba(230,81,0,.3);border-radius:12px;color:rgba(255,200,150,.9);font-size:0.75rem;text-align:center;line-height:1.5;">
-      📵 Offline — sign in only works if you were previously approved on this device.
-    </div>
-
-  </div>
-
-  <!-- Layered background -->
-  <div class="wc-bg"></div>
-  <div class="wc-mesh"></div>
-
-  <!-- Glow orbs -->
-  <div class="wc-orb wc-orb1"></div>
-  <div class="wc-orb wc-orb2"></div>
-  <div class="wc-orb wc-orb3"></div>
-  <div class="wc-orb wc-orb4"></div>
-
-  <!-- Rising particles -->
-  <div class="wc-particles" id="wc-particles"></div>
-
-  <!-- Main content -->
-  <div class="wc-content">
-
-    <!-- Logo -->
-    <div class="wc-logo">🏥</div>
-
-    <!-- Eyebrow -->
-    <div class="wc-eyebrow">Great Lakes University · Nyamache Sub County Hospital</div>
-
-    <!-- Glass card -->
-    <div class="wc-glass">
-      <div class="wc-greeting" id="wc-greeting">Good Morning</div>
-      <div class="wc-title" id="wc-name-title">Community<br>Health Survey</div>
-      <div class="wc-divider"></div>
-      <div class="wc-subtitle" id="wc-subtitle">Situation Analysis Tool<br>Nyamache Sub County</div>
-
-      <!-- Name setup (first time only) -->
-      <div id="wc-name-setup">
-        <input id="wc-name-input" type="text" placeholder="Enter your first name…" autocomplete="given-name">
-        <button class="wc-save-btn" onclick="saveUserName()">Continue →</button>
+          style="flex:1;padding:10px;border:none;background:transparent;color:rgba(255,255,255,.28);font-family:inherit;font-size:.77rem;font-weight:700;cursor:pointer;border-top:2px solid transparent;transition:all .25s;">Register</button>
       </div>
     </div>
 
-    <!-- Loading dots -->
-    <div class="wc-dots" id="wc-dots">
-      <div class="wc-dot"></div>
-      <div class="wc-dot"></div>
-      <div class="wc-dot"></div>
+    <!-- Blocked panels -->
+    <div id="auth-panel-pending" style="display:none;width:100%;max-width:360px;text-align:center;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:28px 22px;">
+      <div style="font-size:40px;margin-bottom:10px;">🚫</div>
+      <div style="color:#fff;font-weight:800;margin-bottom:8px;">Access Removed</div>
+      <div style="color:rgba(255,255,255,.45);font-size:.78rem;line-height:1.6;margin-bottom:18px;">Contact the coordinator to be re-added.</div>
+      <button onclick="authClearAndRetry()" style="width:100%;padding:11px;background:rgba(255,255,255,.07);color:rgba(255,255,255,.65);border:1px solid rgba(255,255,255,.13);border-radius:10px;font-family:inherit;font-size:.84rem;font-weight:600;cursor:pointer;">← Try Different Account</button>
+    </div>
+    <div id="auth-panel-rejected" style="display:none;width:100%;max-width:360px;text-align:center;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:28px 22px;">
+      <div style="font-size:40px;margin-bottom:10px;">🚫</div>
+      <div style="color:#fff;font-weight:800;margin-bottom:8px;">Access Removed</div>
+      <div style="color:rgba(255,255,255,.45);font-size:.78rem;line-height:1.6;margin-bottom:18px;">Contact the coordinator to be re-added.</div>
+      <button onclick="authClearAndRetry()" style="width:100%;padding:11px;background:rgba(255,255,255,.07);color:rgba(255,255,255,.65);border:1px solid rgba(255,255,255,.13);border-radius:10px;font-family:inherit;font-size:.84rem;font-weight:600;cursor:pointer;">← Try Different Account</button>
+    </div>
+    <div id="auth-offline-note" style="display:none;margin-top:10px;width:100%;max-width:360px;padding:10px 14px;background:rgba(230,81,0,.18);border:1px solid rgba(230,81,0,.28);border-radius:12px;color:rgba(255,200,150,.9);font-size:.73rem;text-align:center;line-height:1.5;">
+      📵 Offline — sign in only works if previously approved on this device.
     </div>
 
-    <!-- Enter button -->
-    <button class="wc-enter" id="wc-enter" style="display:none" onclick="enterApp()">
-      Begin Interview <span class="wc-arrow">→</span>
-    </button>
-
-  </div>
-
-  <!-- Footer -->
-  <div class="wc-credit">
-    <div class="wc-built">Built by <strong>HazzinBR</strong> &nbsp;·&nbsp; <span style="opacity:.5">Community Health Survey v2.0</span></div>
-    <div class="wc-tagline">Free · Offline-first · Great Lakes University · Nyamache Sub County Hospital</div>
-    <div style="display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:6px;">
-      <a class="wc-donate" onclick="showDonateModal()" style="text-decoration:none">
-        💚 Support via M-Pesa
-      </a>
-    </div>
-    <div style="color:rgba(255,255,255,.18);font-size:0.58rem;letter-spacing:.3px;">
-      © 2026 HazzinBR · Free to use · No copyright restrictions
+    <!-- Footer -->
+    <div class="auth-footer">
+      <div class="auth-footer-built">Built by <strong>HazzinBR</strong> &nbsp;·&nbsp; <span style="opacity:.45">Community Health Survey v2.0</span></div>
+      <div class="auth-footer-tagline">Free · Offline-first · Great Lakes University · Nyamache Sub County Hospital</div>
+      <a class="auth-footer-donate" onclick="showDonateModal()" style="text-decoration:none">💚 Support via M-Pesa</a>
     </div>
   </div>
 
-</div>
+  <!-- ══ PHASE 3: LOADER (after sign-in) ══ -->
+  <div id="loader-screen">
 
-<!-- DONATE MODAL -->
-<!-- Floating Support FAB -->
-<button id="support-fab" onclick="showDonateModal()" title="Support this project" style="
-  position:fixed;bottom:calc(82px + env(safe-area-inset-bottom));right:16px;
-  z-index:140;width:46px;height:46px;border-radius:50%;
-  background:linear-gradient(135deg,#1a5c35,#1a4060);
-  border:none;cursor:pointer;
-  display:flex;align-items:center;justify-content:center;
-  box-shadow:0 4px 18px rgba(0,0,0,.25),0 0 0 0 rgba(61,184,106,.4);
-  animation:fabPulse 3s ease infinite;
-  font-size:20px;
-  transition:transform .15s;
-">💚</button>
-<style>
-@keyframes fabPulse{
-  0%,100%{box-shadow:0 4px 18px rgba(0,0,0,.25),0 0 0 0 rgba(61,184,106,0);}
-  50%{box-shadow:0 4px 18px rgba(0,0,0,.25),0 0 0 8px rgba(61,184,106,.15);}
-}
-#support-fab:active{transform:scale(0.9);}
-</style>
+    <div class="ls-title">Medical Survey System</div>
+    <div class="ls-sub">Great Lakes University · Nyamache</div>
 
-<!-- Support / Donate Modal -->
-<div id="donateModal" style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.6);align-items:flex-end;justify-content:center;">
-  <div style="background:#fff;width:100%;max-width:480px;border-radius:24px 24px 0 0;padding:28px 22px calc(28px + env(safe-area-inset-bottom));box-shadow:0 -8px 40px rgba(0,0,0,.2);">
-    <div style="text-align:center;margin-bottom:22px">
-      <div style="font-size:48px;margin-bottom:10px">💚</div>
-      <div style="font-size:1.15rem;font-weight:800;color:#1a5c35;margin-bottom:6px;letter-spacing:-.02em">Support HazzinBR</div>
-      <div style="font-size:0.82rem;color:#6b8a74;line-height:1.6;max-width:300px;margin:0 auto">This tool is free for community health work. If it's been useful, consider supporting the developer ☕</div>
+    <div class="ls-ecg" id="ls-ecg-wrap">
+      <svg viewBox="0 0 300 80">
+        <path id="ls-ecg-path" class="running" d="M0 40 L20 40 L30 20 L40 60 L50 40 L70 40 L80 10 L90 70 L100 40 L130 40 L140 25 L150 55 L160 40 L300 40"/>
+      </svg>
     </div>
-    <div style="background:linear-gradient(135deg,#e8f5ed,#edf4fb);border:1.5px solid #cce0d4;border-radius:16px;padding:18px;text-align:center;margin-bottom:16px">
-      <div style="font-size:0.65rem;font-weight:800;color:#6b8a74;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px">M-Pesa · Send Money</div>
-      <div style="font-size:2.2rem;font-weight:800;color:#1a5c35;letter-spacing:3px;font-variant-numeric:tabular-nums">0112973866</div>
-      <div style="font-size:0.75rem;color:#6b8a74;margin-top:5px">Any amount is appreciated 🙏</div>
+
+    <div class="ls-loading" id="ls-loading">Compiling questionnaire...</div>
+    <div id="ls-percent">0%</div>
+    <div class="ls-prog-wrap">
+      <div class="ls-prog-bar" id="ls-bar"></div>
     </div>
-    <div style="background:#f7f8fa;border-radius:12px;padding:12px 14px;margin-bottom:18px;font-size:0.77rem;color:#1a2b22;line-height:1.7">
-      <strong>How to send:</strong> Open M-Pesa → Send Money → Enter <strong>0112973866</strong> → Any amount → Send
+
+    <button id="ls-begin" onclick="loaderBegin()">Begin Survey</button>
+    <div id="ls-countdown"></div>
+
+    <div class="ls-footer">
+      <div class="ls-built">Built by <strong>HazzinBR</strong> &nbsp;·&nbsp; <span style="opacity:.45">Community Health Survey v2.0</span></div>
+      <div class="ls-tagline">Free · Offline-first · Great Lakes University · Nyamache Sub County Hospital</div>
+      <a class="ls-donate" onclick="showDonateModal()" style="text-decoration:none">💚 Support via M-Pesa</a>
     </div>
-    <div style="text-align:center;margin-bottom:14px;font-size:0.65rem;color:#aaa;letter-spacing:.3px">
-      © 2026 HazzinBR · Community Health Survey · Free to use
-    </div>
-    <button onclick="document.getElementById('donateModal').style.display='none'" style="width:100%;padding:14px;background:linear-gradient(135deg,#1a5c35,#1a4060);color:#fff;border:none;border-radius:14px;font-family:inherit;font-size:0.95rem;font-weight:700;cursor:pointer;box-shadow:0 4px 14px rgba(26,92,53,.2)">Close</button>
   </div>
+
 </div>
 
 <div class="topbar">
@@ -2937,8 +2863,74 @@ document.addEventListener('DOMContentLoaded',init);
 function getUserName(){ return localStorage.getItem('chsa_user_name')||''; }
 
 function forgetUser(){
-  if(!confirm('Remove your saved name from this phone?')) return;
+  showChangeNameOverlay();
+}
+
+function showChangeNameOverlay(){
+  const old = document.getElementById('change-name-overlay');
+  if(old) old.remove();
+  const overlay = document.createElement('div');
+  overlay.id = 'change-name-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:20px;';
+  const currentName = getUserName() || '';
+  const session = authGetSession();
+  const isAuthSession = !!(session && session.reg_number);
+  overlay.innerHTML = isAuthSession ? `
+    <div style="background:#fff;border-radius:20px;padding:28px 22px;max-width:340px;width:100%;box-shadow:0 12px 50px rgba(0,0,0,.25);text-align:center;">
+      <div style="font-size:36px;margin-bottom:10px">&#128100;</div>
+      <div style="font-weight:800;font-size:1rem;color:var(--text);margin-bottom:6px">Change Interviewer</div>
+      <div style="font-size:0.8rem;color:var(--muted);line-height:1.5;margin-bottom:20px">
+        You are signed in as <strong>${session.full_name||currentName}</strong>.<br>
+        To switch accounts, sign out and sign in with a different ID.
+      </div>
+      <button onclick="authSignOut()" style="width:100%;padding:13px;background:linear-gradient(135deg,var(--red),#c0392b);color:#fff;border:none;border-radius:12px;font-family:inherit;font-size:0.9rem;font-weight:700;cursor:pointer;margin-bottom:10px;">
+        &#128682; Sign Out &amp; Switch Account
+      </button>
+      <button onclick="document.getElementById('change-name-overlay').remove()" style="width:100%;padding:11px;background:var(--cream);color:var(--muted);border:1.5px solid var(--border);border-radius:12px;font-family:inherit;font-size:0.88rem;font-weight:600;cursor:pointer;">
+        Cancel
+      </button>
+    </div>
+  ` : `
+    <div style="background:#fff;border-radius:20px;padding:28px 22px;max-width:340px;width:100%;box-shadow:0 12px 50px rgba(0,0,0,.25);">
+      <div style="font-size:36px;text-align:center;margin-bottom:10px">&#9999;</div>
+      <div style="font-weight:800;font-size:1rem;color:var(--text);margin-bottom:4px;text-align:center">Change Your Name</div>
+      <div style="font-size:0.78rem;color:var(--muted);margin-bottom:18px;text-align:center">Updates your interviewer name on all new records.</div>
+      <input id="change-name-input" type="text" value="${currentName}"
+        style="width:100%;padding:13px 15px;border:1.5px solid var(--border);border-radius:12px;font-family:inherit;font-size:0.95rem;color:var(--text);outline:none;margin-bottom:14px;"
+        onfocus="this.style.borderColor='var(--green-light)'"
+        onblur="this.style.borderColor='var(--border)'"
+        onkeydown="if(event.key==='Enter')saveChangedName()">
+      <button onclick="saveChangedName()" style="width:100%;padding:13px;background:linear-gradient(135deg,var(--green),#1a4060);color:#fff;border:none;border-radius:12px;font-family:inherit;font-size:0.92rem;font-weight:700;cursor:pointer;margin-bottom:10px;">
+        &#10003; Save Name
+      </button>
+      <button onclick="document.getElementById('change-name-overlay').remove()" style="width:100%;padding:11px;background:var(--cream);color:var(--muted);border:1.5px solid var(--border);border-radius:12px;font-family:inherit;font-size:0.88rem;font-weight:600;cursor:pointer;">
+        Cancel
+      </button>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  setTimeout(()=>{ const inp=document.getElementById('change-name-input'); if(inp){inp.focus();inp.select();} }, 80);
+}
+
+function saveChangedName(){
+  const inp = document.getElementById('change-name-input');
+  if(!inp) return;
+  const raw = inp.value.trim();
+  if(!raw){ inp.style.borderColor='var(--red)'; return; }
+  const niceName = raw.charAt(0).toUpperCase() + raw.slice(1);
+  localStorage.setItem('chsa_user_name', niceName);
+  fillInterviewerFields(niceName);
+  if(recId && recs[recId]){ recs[recId].interviewer_name = niceName; ss(); }
+  document.getElementById('change-name-overlay').remove();
+  showToast('Name updated to ' + niceName);
+}
+
+function authSignOut(){
+  if(!confirm('Sign out and return to the login screen?\n\nLocal records are kept safely.')) return;
+  authClearSession();
   localStorage.removeItem('chsa_user_name');
+  const ov = document.getElementById('change-name-overlay');
+  if(ov) ov.remove();
   location.reload();
 }
 
@@ -3002,12 +2994,128 @@ function authGetSession(){ try{ return JSON.parse(localStorage.getItem(AUTH_KEY)
 function authSaveSession(s){ localStorage.setItem(AUTH_KEY, JSON.stringify(s)); }
 function authClearSession(){ localStorage.removeItem(AUTH_KEY); }
 
-// Called on page load — decide what to show
+// ═══════════════════════════════════════════════════════
+//  ENTRANCE SEQUENCE — clean, smooth, mobile-first
+//  Phase 1: Lamp room (swing → any touch/scroll lights it)
+//  Phase 2: Login card fades in over lit lamp
+//  Phase 3: After login → loader (ECG + detailed progress)
+//  Phase 4: 100% → ECG stops → Begin button + 5s auto
+// ═══════════════════════════════════════════════════════
+
+let _lampOn    = false;
+let _autoTimer = null;
+
+// ── BOOT: wire ALL touch+scroll+click on lamp room ─────
+document.addEventListener('DOMContentLoaded', ()=>{
+  const btn  = document.getElementById('pull-btn');
+  const room = document.getElementById('lamp-room');
+  const ws   = document.getElementById('welcome-screen');
+
+  if(!btn || !room) return;
+
+  // ── Unified trigger: any meaningful interaction lights the lamp ──
+  function trigger(e){
+    if(_lampOn) return;
+    // Prevent the touch from also firing click
+    if(e.cancelable) e.preventDefault();
+    lampPull();
+  }
+
+  // Touch: single finger touchend (no move = tap)
+  let _touchMoved = false;
+  btn.addEventListener('touchstart', ()=>{ _touchMoved=false; }, {passive:true});
+  btn.addEventListener('touchmove',  ()=>{ _touchMoved=true;  }, {passive:true});
+  btn.addEventListener('touchend', (e)=>{
+    if(!_touchMoved){ trigger(e); }
+  }, {passive:false});
+
+  // Click fallback (desktop + accessibility)
+  btn.addEventListener('click', trigger);
+  btn.addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===' ') trigger(e); });
+
+  // Scroll down on the lamp room also triggers (mobile swipe down)
+  let _touchStartY = 0;
+  room.addEventListener('touchstart', e=>{ _touchStartY = e.touches[0].clientY; }, {passive:true});
+  room.addEventListener('touchend', e=>{
+    if(_lampOn) return;
+    const dy = e.changedTouches[0].clientY - _touchStartY;
+    if(dy > 30){ lampPull(); } // swipe down 30px → light lamp
+  }, {passive:true});
+
+  // Also wire the whole welcome screen for any swipe
+  if(ws){
+    let _wsTY=0;
+    ws.addEventListener('touchstart', e=>{ _wsTY=e.touches[0].clientY; }, {passive:true});
+    ws.addEventListener('touchend', e=>{
+      if(_lampOn) return;
+      const dy = e.changedTouches[0].clientY - _wsTY;
+      if(dy > 40){ lampPull(); }
+    }, {passive:true});
+  }
+});
+
+// ── PHASE 1: LAMP ──────────────────────────────────────
+function lampPull(){
+  if(_lampOn) return;
+  _lampOn = true;
+
+  // Animate shade inner glow to green
+  const gs = document.getElementById('glow-stop');
+  if(gs){
+    gs.setAttribute('stop-color','rgba(29,185,84,0.55)');
+    if(gs.nextElementSibling) gs.nextElementSibling.setAttribute('stop-color','rgba(29,185,84,0)');
+  }
+
+  // Light up room
+  const gl = document.getElementById('lamp-glow');
+  const fl = document.getElementById('floor-glow');
+  if(gl) gl.style.opacity = '1';
+  if(fl) fl.style.opacity = '1';
+
+  // Dust particles float in light
+  spawnDust();
+
+  // Update pull-text
+  const pt = document.getElementById('pull-text');
+  if(pt){ pt.innerHTML='Light is on <span id="pull-hint">Sign in to begin</span>'; }
+
+  // Dim lamp room slightly so login card reads clearly
+  const room = document.getElementById('lamp-room');
+  setTimeout(()=>{ if(room) room.style.opacity='0.35'; }, 900);
+
+  // Reveal auth overlay — slow fade, feels like emerging from dark
+  setTimeout(()=>{
+    const auth = document.getElementById('lamp-auth');
+    if(auth) auth.classList.add('open');
+    // Focus input after transition completes
+    setTimeout(()=>{
+      const inp = document.getElementById('auth-reg-login');
+      if(inp) inp.focus();
+    }, 1800);
+  }, 800);
+}
+
+function spawnDust(){
+  const cont = document.getElementById('dust-container');
+  if(!cont) return;
+  for(let i=0;i<18;i++){
+    const p = document.createElement('div');
+    p.className = 'room-particle';
+    const sz = 1.5 + Math.random()*3;
+    p.style.cssText =
+      'width:'+sz+'px;height:'+sz+'px;'+
+      'left:'+(15+Math.random()*70)+'%;'+
+      'bottom:'+(5+Math.random()*50)+'%;'+
+      'animation-duration:'+(6+Math.random()*8)+'s;'+
+      'animation-delay:'+(-Math.random()*5)+'s;'+
+      'opacity:'+(0.15+Math.random()*0.5)+';';
+    cont.appendChild(p);
+  }
+}
+
+// ── PHASE 2: AUTH ──────────────────────────────────────
 async function authInit(){
-  spawnParticles();
-  applyWelcome();
   const session = authGetSession();
-  // Has session — go straight in, just check not removed
   if(session && session.full_name){
     if(navigator.onLine){
       try{
@@ -3016,51 +3124,162 @@ async function authInit(){
           {headers:{apikey:SUPABASE_KEY,Authorization:'Bearer '+SUPABASE_KEY}}
         );
         const data = await res.json();
-        if(data[0]?.status==='removed'){
-          authClearSession();
-          authShowAuthCard(true);
-          authMsg('login','⚠ Your access has been removed. Contact the coordinator.','rgba(255,150,100,.9)');
-          return;
-        }
-      }catch(e){ /* trust local on error */ }
+        if(data[0]?.status==='removed'){ authClearSession(); return; }
+      }catch(e){ /* trust local session on error */ }
     }
-    authEnterApp();
-    return;
+    // Returning user: auto-light lamp after swing settles, skip login
+    setTimeout(()=>{
+      _lampOn = true;
+      const gs=document.getElementById('glow-stop');
+      if(gs) gs.setAttribute('stop-color','rgba(29,185,84,0.55)');
+      const gl=document.getElementById('lamp-glow');
+      const fl=document.getElementById('floor-glow');
+      if(gl) gl.style.opacity='1';
+      if(fl) fl.style.opacity='1';
+      spawnDust();
+    }, 1600);
+    setTimeout(()=>{
+      const first = session.full_name.split(' ')[0];
+      localStorage.setItem('chsa_user_name', first);
+      fillInterviewerFields(first);
+      showLoader();
+    }, 2700);
   }
-  // No session — show login
-  const hasVisited = !!localStorage.getItem('chsa_user_name');
-  authShowAuthCard(hasVisited);
-  if(!navigator.onLine) document.getElementById('auth-offline-note').style.display='block';
+  // New user: wait for lamp interaction → login
 }
 
-function authShowAuthCard(isReturning=false){
-  const card = document.getElementById('wc-auth');
-  if(card) card.style.display='flex';
-  document.querySelectorAll('.wc-logo,.wc-eyebrow,.wc-glass,.wc-dots,#wc-enter').forEach(el=>{
-    if(el) el.style.display='none';
-  });
-  // Default to sign in tab
+function authShowAuthCard(){
+  if(!_lampOn) lampPull();
+  else {
+    const auth = document.getElementById('lamp-auth');
+    if(auth && !auth.classList.contains('open')) auth.classList.add('open');
+  }
   authShowTab('login');
 }
 
 function authEnterApp(){
   const s = authGetSession();
   const first = s?.full_name ? s.full_name.split(' ')[0] : getUserName();
+  if(first){ localStorage.setItem('chsa_user_name',first); fillInterviewerFields(first); }
 
-  if(first){
-    localStorage.setItem('chsa_user_name', first);
-    fillInterviewerFields(first);
+  // Fade auth out
+  const auth = document.getElementById('lamp-auth');
+  if(auth){
+    auth.style.transition = 'opacity .45s ease';
+    auth.style.opacity = '0';
+    setTimeout(()=>{ auth.style.pointerEvents='none'; }, 470);
   }
-
-  // Fade out auth and enter app
-  const card = document.getElementById('wc-auth');
-  if(card){ card.style.transition='opacity .4s'; card.style.opacity='0'; }
-  setTimeout(()=>{
-    if(card) card.style.display='none';
-    document.querySelectorAll('.wc-logo,.wc-eyebrow,.wc-glass').forEach(el=>{ if(el) el.style.removeProperty('display'); });
-    enterApp();
-  }, 420);
+  setTimeout(showLoader, 500);
 }
+
+// ── PHASE 3: LOADER ────────────────────────────────────
+function showLoader(){
+  const ls   = document.getElementById('loader-screen');
+  const room = document.getElementById('lamp-room');
+  const auth = document.getElementById('lamp-auth');
+
+  // Fade out lamp room + auth
+  if(room){ room.style.transition='opacity .65s ease'; room.style.opacity='0'; }
+  if(auth){ auth.style.transition='opacity .45s ease'; auth.style.opacity='0';
+    setTimeout(()=>auth.style.pointerEvents='none', 470); }
+
+  // Fade loader in after background clears
+  setTimeout(()=>{ if(ls) ls.classList.add('open'); }, 520);
+
+  // Start progress after loader is fully visible
+  setTimeout(runProgress, 900);
+}
+
+// ── PHASE 4: PROGRESS BAR ──────────────────────────────
+// Detailed step messages tied to exact percentage milestones
+const PROGRESS_STEPS = [
+  { at:  0, msg: 'Initialising system...' },
+  { at: 10, msg: 'Loading questionnaire modules...' },
+  { at: 22, msg: 'Compiling Section A — Demography...' },
+  { at: 34, msg: 'Compiling Section B — Housing...' },
+  { at: 44, msg: 'Compiling Section C — Medical History...' },
+  { at: 54, msg: 'Compiling Section D — Maternal & Child...' },
+  { at: 63, msg: 'Compiling Section E — Nutrition...' },
+  { at: 72, msg: 'Compiling Section F — HIV/AIDS...' },
+  { at: 80, msg: 'Compiling Sections G–K — Environment...' },
+  { at: 88, msg: 'Checking integrity rules...' },
+  { at: 93, msg: 'Verifying offline database...' },
+  { at: 97, msg: 'Adjusting progress...' },
+  { at: 99, msg: 'Finalising...' },
+];
+
+function runProgress(){
+  let pct = 0;
+  let stepI = 0;
+  const bar  = document.getElementById('ls-bar');
+  const txt  = document.getElementById('ls-percent');
+  const lbl  = document.getElementById('ls-loading');
+  const btn  = document.getElementById('ls-begin');
+  const ecg  = document.getElementById('ls-ecg-path');
+  const cd   = document.getElementById('ls-countdown');
+
+  // Set first message
+  if(lbl) lbl.textContent = PROGRESS_STEPS[0].msg;
+
+  const iv = setInterval(()=>{
+    pct++;
+    if(txt) txt.textContent = pct + '%';
+    if(bar) bar.style.width = pct + '%';
+
+    // Trigger step messages at exact percentages
+    for(let i = stepI; i < PROGRESS_STEPS.length; i++){
+      if(pct >= PROGRESS_STEPS[i].at){
+        if(lbl) lbl.textContent = PROGRESS_STEPS[i].msg;
+        stepI = i + 1;
+      }
+    }
+
+    if(pct >= 100){
+      clearInterval(iv);
+      setTimeout(()=>{
+        // Stop ECG — flatline dimmed
+        if(ecg){ ecg.classList.remove('running'); ecg.classList.add('stopped'); }
+
+        // Final message
+        if(lbl){ lbl.textContent = 'Complete ✓ — Survey ready'; lbl.style.color='#1DB954'; }
+
+        // Show button
+        if(btn){ btn.style.display='block'; }
+
+        // 5-second countdown auto-open
+        let secs = 5;
+        if(cd){ cd.style.display='block'; cd.textContent='Opening in '+secs+'s…'; }
+        _autoTimer = setInterval(()=>{
+          secs--;
+          if(cd) cd.textContent = secs > 0 ? 'Opening in '+secs+'s…' : 'Opening…';
+          if(secs <= 0){ clearInterval(_autoTimer); _autoTimer=null; loaderBegin(); }
+        }, 1000);
+
+      }, 400);
+    }
+  }, 38); // ~3.8s total for 100 steps
+}
+
+function loaderBegin(){
+  if(_autoTimer){ clearInterval(_autoTimer); _autoTimer=null; }
+  const ls = document.getElementById('loader-screen');
+  if(ls){
+    ls.classList.add('out');
+    setTimeout(()=>{ ls.classList.remove('open','out'); enterApp(); }, 560);
+  }
+}
+
+function enterApp(){
+  const ws = document.getElementById('welcome-screen');
+  if(ws){ ws.classList.add('hiding'); setTimeout(()=>{ ws.style.display='none'; }, 680); }
+}
+
+// ── COMPATIBILITY STUBS ────────────────────────────────
+function showSplash(cb){ if(cb) cb(); }
+function showWelcomeInterstitial(n,r,cb){ loaderBegin(); }
+function wciEnterSurvey(){ loaderBegin(); }
+function showHeartScreen(){ loaderBegin(); }
+function hsEnterSurvey(){ loaderBegin(); }
 
 let _authCurrentTab = 'login';
 
