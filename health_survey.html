@@ -547,7 +547,7 @@ table.dt select{width:100%;padding:5px 4px;border:1px solid var(--border);border
 .ls-ecg path.running{animation:lsHeartbeat 2s linear infinite;}
 .ls-ecg path.stopped{animation:none;stroke-dashoffset:0;opacity:.3;}
 @keyframes lsHeartbeat{0%{stroke-dashoffset:500;}100%{stroke-dashoffset:0;}}
-.ls-loading{font-size:.85rem;opacity:.7;margin-bottom:8px;min-height:20px;transition:color .3s;}
+.ls-loading{font-size:.88rem;color:#fff;font-weight:500;opacity:1;margin-bottom:8px;min-height:22px;transition:color .4s;letter-spacing:.2px;}
 #ls-percent{font-size:1.1rem;margin-bottom:16px;color:#1DB954;font-weight:700;}
 .ls-prog-wrap{width:220px;height:8px;background:#2a2a2a;border-radius:10px;overflow:hidden;margin-bottom:28px;}
 .ls-prog-bar{height:100%;width:0%;background:#1DB954;border-radius:10px;box-shadow:0 0 10px #1DB954;transition:width .18s linear;}
@@ -3127,23 +3127,11 @@ async function authInit(){
         if(data[0]?.status==='removed'){ authClearSession(); return; }
       }catch(e){ /* trust local session on error */ }
     }
-    // Returning user: auto-light lamp after swing settles, skip login
-    setTimeout(()=>{
-      _lampOn = true;
-      const gs=document.getElementById('glow-stop');
-      if(gs) gs.setAttribute('stop-color','rgba(29,185,84,0.55)');
-      const gl=document.getElementById('lamp-glow');
-      const fl=document.getElementById('floor-glow');
-      if(gl) gl.style.opacity='1';
-      if(fl) fl.style.opacity='1';
-      spawnDust();
-    }, 1600);
-    setTimeout(()=>{
-      const first = session.full_name.split(' ')[0];
-      localStorage.setItem('chsa_user_name', first);
-      fillInterviewerFields(first);
-      showLoader();
-    }, 2700);
+    // Returning user: show greeting overlay for 2s then enter survey
+    const first = session.full_name.split(' ')[0];
+    localStorage.setItem('chsa_user_name', first);
+    fillInterviewerFields(first);
+    showReturningGreeting(first);
   }
   // New user: wait for lamp interaction → login
 }
@@ -3209,55 +3197,77 @@ const PROGRESS_STEPS = [
 ];
 
 function runProgress(){
-  let pct = 0;
-  let stepI = 0;
-  const bar  = document.getElementById('ls-bar');
-  const txt  = document.getElementById('ls-percent');
-  const lbl  = document.getElementById('ls-loading');
-  const btn  = document.getElementById('ls-begin');
-  const ecg  = document.getElementById('ls-ecg-path');
-  const cd   = document.getElementById('ls-countdown');
+  const bar = document.getElementById('ls-bar');
+  const txt = document.getElementById('ls-percent');
+  const lbl = document.getElementById('ls-loading');
+  const btn = document.getElementById('ls-begin');
+  const ecg = document.getElementById('ls-ecg-path');
+  const cd  = document.getElementById('ls-countdown');
 
-  // Set first message
-  if(lbl) lbl.textContent = PROGRESS_STEPS[0].msg;
+  // Each step: [targetPct, message, delayBeforeNext ms]
+  // Steps 0–87 run fast (bar fills quickly, messages flash)
+  // Steps 88–99 each hold for ~600ms so they are readable
+  const STEPS = [
+    [0,  'Initialising system…',                    0],
+    [10, 'Loading questionnaire modules…',           600],
+    [22, 'Compiling Section A — Demography…',        600],
+    [34, 'Compiling Section B — Housing…',           600],
+    [44, 'Compiling Section C — Medical History…',   600],
+    [54, 'Compiling Section D — Maternal & Child…',  600],
+    [63, 'Compiling Section E — Nutrition…',         600],
+    [72, 'Compiling Section F — HIV/AIDS…',          600],
+    [80, 'Compiling Sections G–K — Environment…',   700],
+    [88, 'Checking integrity rules…',                700],
+    [93, 'Verifying offline database…',              700],
+    [97, 'Adjusting progress…',                      600],
+    [99, 'Finalising…',                              500],
+    [100,'Complete ✓ — Survey ready',                0],
+  ];
 
-  const iv = setInterval(()=>{
-    pct++;
-    if(txt) txt.textContent = pct + '%';
-    if(bar) bar.style.width = pct + '%';
+  let currentPct = 0;
+  let stepIdx = 0;
 
-    // Trigger step messages at exact percentages
-    for(let i = stepI; i < PROGRESS_STEPS.length; i++){
-      if(pct >= PROGRESS_STEPS[i].at){
-        if(lbl) lbl.textContent = PROGRESS_STEPS[i].msg;
-        stepI = i + 1;
+  if(lbl) lbl.textContent = STEPS[0][1];
+
+  function animateTo(targetPct, afterDelay, done){
+    // Smoothly tick from currentPct to targetPct
+    const tickMs = targetPct <= 80 ? 28 : 22; // faster at end visually
+    const iv = setInterval(()=>{
+      currentPct++;
+      if(txt) txt.textContent = currentPct + '%';
+      if(bar) bar.style.width = currentPct + '%';
+      if(currentPct >= targetPct){
+        clearInterval(iv);
+        setTimeout(done, afterDelay);
       }
+    }, tickMs);
+  }
+
+  function runStep(i){
+    if(i >= STEPS.length) return;
+    const [targetPct, msg, holdMs] = STEPS[i];
+    if(lbl) lbl.textContent = msg;
+
+    if(targetPct === 100){
+      // Final: stop ECG, show button, start countdown
+      if(ecg){ ecg.classList.remove('running'); ecg.classList.add('stopped'); }
+      if(lbl){ lbl.style.color='#1DB954'; }
+      if(btn){ btn.style.display='block'; }
+      let secs = 5;
+      if(cd){ cd.style.display='block'; cd.textContent='Opening in '+secs+'s…'; }
+      _autoTimer = setInterval(()=>{
+        secs--;
+        if(cd) cd.textContent = secs > 0 ? 'Opening in '+secs+'s…' : 'Opening…';
+        if(secs <= 0){ clearInterval(_autoTimer); _autoTimer=null; loaderBegin(); }
+      }, 1000);
+      return;
     }
 
-    if(pct >= 100){
-      clearInterval(iv);
-      setTimeout(()=>{
-        // Stop ECG — flatline dimmed
-        if(ecg){ ecg.classList.remove('running'); ecg.classList.add('stopped'); }
+    animateTo(targetPct, holdMs, ()=> runStep(i+1));
+  }
 
-        // Final message
-        if(lbl){ lbl.textContent = 'Complete ✓ — Survey ready'; lbl.style.color='#1DB954'; }
-
-        // Show button
-        if(btn){ btn.style.display='block'; }
-
-        // 5-second countdown auto-open
-        let secs = 5;
-        if(cd){ cd.style.display='block'; cd.textContent='Opening in '+secs+'s…'; }
-        _autoTimer = setInterval(()=>{
-          secs--;
-          if(cd) cd.textContent = secs > 0 ? 'Opening in '+secs+'s…' : 'Opening…';
-          if(secs <= 0){ clearInterval(_autoTimer); _autoTimer=null; loaderBegin(); }
-        }, 1000);
-
-      }, 400);
-    }
-  }, 38); // ~3.8s total for 100 steps
+  // Kick off
+  runStep(1); // step 0 already shown as initial message
 }
 
 function loaderBegin(){
@@ -3280,6 +3290,152 @@ function showWelcomeInterstitial(n,r,cb){ loaderBegin(); }
 function wciEnterSurvey(){ loaderBegin(); }
 function showHeartScreen(){ loaderBegin(); }
 function hsEnterSurvey(){ loaderBegin(); }
+
+
+// ── RETURNING USER GREETING (5s, styled like screenshot) ──
+function showReturningGreeting(name){
+  const ws = document.getElementById('welcome-screen');
+  const h  = new Date().getHours();
+  const tod = h<12?'Good Morning':h<17?'Good Afternoon':'Good Evening';
+
+  // Inject keyframes once
+  if(!document.getElementById('ret-greet-style')){
+    const st = document.createElement('style');
+    st.id = 'ret-greet-style';
+    st.textContent = `
+      @keyframes rgLogoIn {
+        from{opacity:0;transform:scale(.5) translateY(-20px);}
+        to  {opacity:1;transform:scale(1)  translateY(0);}
+      }
+      @keyframes rgRise {
+        from{opacity:0;transform:translateY(18px);}
+        to  {opacity:1;transform:translateY(0);}
+      }
+      @keyframes rgOrb {
+        0%,100%{transform:translate(0,0) scale(1);}
+        50%    {transform:translate(18px,-24px) scale(1.1);}
+      }
+      @keyframes rgOut {
+        from{opacity:1;transform:translateY(0);}
+        to  {opacity:0;transform:translateY(-28px);}
+      }
+    `;
+    document.head.appendChild(st);
+  }
+
+  const ov = document.createElement('div');
+  ov.id = 'return-greet';
+  ov.style.cssText = [
+    'position:absolute;inset:0;z-index:50',
+    'background:linear-gradient(160deg,#071510 0%,#0a1a0e 50%,#060e0a 100%)',
+    'display:flex;flex-direction:column',
+    'align-items:center;justify-content:space-between',
+    'padding:0;overflow:hidden',
+    'opacity:0;transition:opacity .55s ease',
+  ].join(';');
+
+  ov.innerHTML = `
+    <!-- bg mesh -->
+    <div style="position:absolute;inset:0;pointer-events:none;
+      background-image:linear-gradient(rgba(29,185,84,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(29,185,84,.035) 1px,transparent 1px);
+      background-size:40px 40px;"></div>
+    <!-- glow orbs -->
+    <div style="position:absolute;width:320px;height:320px;border-radius:50%;
+      background:rgba(26,92,53,.45);filter:blur(70px);
+      top:-80px;right:-80px;pointer-events:none;
+      animation:rgOrb 9s ease-in-out infinite alternate;"></div>
+    <div style="position:absolute;width:240px;height:240px;border-radius:50%;
+      background:rgba(26,64,96,.4);filter:blur(60px);
+      bottom:-60px;left:-60px;pointer-events:none;
+      animation:rgOrb 12s ease-in-out infinite alternate;animation-delay:-4s;"></div>
+
+    <!-- content -->
+    <div style="position:relative;z-index:2;display:flex;flex-direction:column;
+      align-items:center;flex:1;justify-content:center;padding:0 28px;width:100%;max-width:380px;margin:0 auto;">
+
+      <!-- logo badge -->
+      <div style="width:90px;height:90px;border-radius:26px;
+        background:linear-gradient(145deg,rgba(26,92,53,.6),rgba(26,64,96,.5));
+        border:1px solid rgba(255,255,255,.13);
+        display:flex;align-items:center;justify-content:center;font-size:44px;
+        box-shadow:0 0 0 1px rgba(29,185,84,.18),0 10px 40px rgba(0,0,0,.45),0 0 60px rgba(26,92,53,.25);
+        margin-bottom:20px;
+        opacity:0;animation:rgLogoIn .65s cubic-bezier(.34,1.56,.64,1) .15s both;">🏥</div>
+
+      <!-- eyebrow -->
+      <div style="color:rgba(29,185,84,.82);font-size:.65rem;font-weight:800;
+        letter-spacing:3.5px;text-transform:uppercase;text-align:center;
+        margin-bottom:16px;
+        opacity:0;animation:rgRise .5s ease .5s both;">
+        Great Lakes University · Nyamache Sub County Hospital
+      </div>
+
+      <!-- glass card -->
+      <div style="width:100%;background:rgba(255,255,255,.055);
+        border:1px solid rgba(255,255,255,.1);border-radius:22px;
+        padding:28px 24px 24px;text-align:center;
+        backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+        box-shadow:0 8px 40px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.07);">
+
+        <!-- time of day greeting — LARGE -->
+        <div style="color:rgba(255,255,255,.75);font-size:1.5rem;font-weight:700;
+          letter-spacing:-.02em;margin-bottom:4px;
+          opacity:0;animation:rgRise .55s ease .7s both;">${tod}</div>
+
+        <!-- name — BIG -->
+        <div style="color:#fff;font-size:2.8rem;font-weight:800;
+          letter-spacing:-.04em;line-height:1.05;
+          text-shadow:0 3px 24px rgba(0,0,0,.7);
+          opacity:0;animation:rgRise .6s ease .88s both;">${name}!</div>
+
+        <!-- divider -->
+        <div style="width:44px;height:2px;margin:14px auto;border-radius:99px;
+          background:linear-gradient(90deg,transparent,rgba(29,185,84,.7),transparent);
+          opacity:0;animation:rgRise .45s ease 1.05s both;"></div>
+
+        <!-- welcome back -->
+        <div style="color:rgba(255,255,255,.5);font-size:.82rem;line-height:1.55;
+          opacity:0;animation:rgRise .5s ease 1.2s both;">
+          Welcome back<br>
+          <span style="color:rgba(29,185,84,.8);font-size:.72rem;font-weight:600;
+            letter-spacing:1.5px;text-transform:uppercase;">
+            Community Health Survey
+          </span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- footer -->
+    <div style="position:relative;z-index:2;width:100%;
+      padding:10px 20px calc(10px + env(safe-area-inset-bottom));
+      text-align:center;
+      background:rgba(0,0,0,.35);
+      border-top:1px solid rgba(255,255,255,.05);
+      opacity:0;animation:rgRise .45s ease 1.5s both;">
+      <div style="color:rgba(255,255,255,.25);font-size:.62rem;letter-spacing:.3px;margin-bottom:3px;">
+        Built by <strong style="color:rgba(255,255,255,.5);">HazzinBR</strong>
+        &nbsp;·&nbsp; <span style="opacity:.55">Community Health Survey v2.0</span>
+      </div>
+      <div style="color:rgba(255,255,255,.13);font-size:.58rem;font-style:italic;">
+        Free · Offline-first · Great Lakes University · Nyamache Sub County Hospital
+      </div>
+    </div>
+  `;
+
+  if(ws) ws.appendChild(ov);
+
+  // Fade in
+  requestAnimationFrame(()=> requestAnimationFrame(()=>{ ov.style.opacity='1'; }));
+
+  // Hold for 5 seconds, then sweep out and enter survey
+  setTimeout(()=>{
+    ov.style.animation = 'rgOut .55s ease forwards';
+    setTimeout(enterApp, 560);
+  }, 5000);
+}
+
+
 
 let _authCurrentTab = 'login';
 
