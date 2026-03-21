@@ -90,49 +90,61 @@ html,body{
 
 /* ── SECTION WRAPPER — slide container ── */
 .secs-wrap{
-  padding:14px 12px 120px;
-  overflow:hidden;position:relative;
+  position:relative;
+  overflow:hidden;
+  /* height set by JS after init to match tallest card */
+  min-height:60vh;
+  padding:0;
 }
 
-/* ── SECTION CARDS — slide animation ── */
+/* ── SECTION CARDS — pure horizontal slide, no vertical jump ── */
 .sec-card{
-  display:none;
-  animation:none;
+  position:absolute;top:0;left:0;right:0;
+  padding:14px 12px 120px;
+  /* hidden off-screen to the right by default */
+  opacity:0;
+  transform:translateX(100%);
+  transition:transform .32s cubic-bezier(.4,0,.2,1), opacity .32s ease;
+  pointer-events:none;
+  will-change:transform,opacity;
 }
 .sec-card.active{
-  display:block;
-  animation:slideInRight .28s cubic-bezier(.4,0,.2,1) both;
+  opacity:1;
+  transform:translateX(0);
+  pointer-events:all;
+  position:relative; /* takes up space so wrapper knows height */
 }
-.sec-card.slide-out-left{
-  display:block;
-  animation:slideOutLeft .22s cubic-bezier(.4,0,.2,1) both;
-  pointer-events:none;
+/* sliding in from right (going forward) */
+.sec-card.slide-in-right{
+  opacity:0;
+  transform:translateX(100%);
+  transition:none; /* set position instantly before animating */
 }
+/* sliding in from left (going back) */
 .sec-card.slide-in-left{
-  display:block;
-  animation:slideInLeft .28s cubic-bezier(.4,0,.2,1) both;
+  opacity:0;
+  transform:translateX(-100%);
+  transition:none;
 }
-@keyframes slideInRight{
-  from{opacity:0;transform:translateX(44px);}
-  to{opacity:1;transform:translateX(0);}
-}
-@keyframes slideInLeft{
-  from{opacity:0;transform:translateX(-44px);}
-  to{opacity:1;transform:translateX(0);}
-}
-@keyframes slideOutLeft{
-  from{opacity:1;transform:translateX(0);}
-  to{opacity:0;transform:translateX(-44px);}
-}
-@keyframes slideOutRight{
-  from{opacity:1;transform:translateX(0);}
-  to{opacity:0;transform:translateX(44px);}
-}
-.sec-card.slide-out-right{
-  display:block;
-  animation:slideOutRight .22s cubic-bezier(.4,0,.2,1) both;
+/* outgoing card going left (forward navigation) */
+.sec-card.slide-out-left{
+  opacity:0;
+  transform:translateX(-100%);
   pointer-events:none;
+  position:absolute;
 }
+/* outgoing card going right (back navigation) */
+.sec-card.slide-out-right{
+  opacity:0;
+  transform:translateX(100%);
+  pointer-events:none;
+  position:absolute;
+}
+/* keep old keyframes for any legacy references */
+@keyframes slideInRight{from{opacity:0;transform:translateX(44px);}to{opacity:1;transform:translateX(0);}}
+@keyframes slideInLeft{from{opacity:0;transform:translateX(-44px);}to{opacity:1;transform:translateX(0);}}
+@keyframes slideOutLeft{from{opacity:1;transform:translateX(0);}to{opacity:0;transform:translateX(-44px);}}
+@keyframes slideOutRight{from{opacity:1;transform:translateX(0);}to{opacity:0;transform:translateX(44px);}}
 
 /* ── SECTION CARD DESIGN ── */
 .sec-hdr{
@@ -581,6 +593,43 @@ table.dt select{width:100%;padding:5px 4px;border:1px solid var(--border);border
 
 
 
+
+/* ── IN-PAGE REPORT OVERLAY — iframe-based ───────── */
+#report-overlay{
+  display:none;position:fixed;inset:0;z-index:10000;
+  background:#e8e8e8;
+  flex-direction:column;
+  -webkit-overflow-scrolling:touch;
+}
+#report-overlay.open{ display:flex; }
+#report-toolbar{
+  flex-shrink:0;
+  background:#1e5c38;color:#fff;
+  padding:12px 16px;display:flex;align-items:center;
+  justify-content:space-between;gap:10px;
+  box-shadow:0 2px 12px rgba(0,0,0,.25);
+}
+#report-toolbar span{font-weight:700;font-size:.9rem;letter-spacing:.2px;}
+.report-tb-btn{
+  background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.3);
+  color:#fff;border-radius:8px;padding:8px 16px;
+  font-family:inherit;font-size:.82rem;font-weight:700;cursor:pointer;
+  transition:background .15s;white-space:nowrap;
+}
+.report-tb-btn:active{background:rgba(255,255,255,.32);}
+.report-tb-print{background:rgba(255,255,255,.92);color:#1e5c38;}
+.report-tb-print:active{background:#fff;}
+#report-frame{
+  flex:1;
+  width:100%;
+  border:none;
+  background:#fff;
+}
+#report-actions{ flex-shrink:0; }
+@media print{
+  /* When print is triggered via printReport(), iframe handles it */
+  #report-overlay{ display:none!important; }
+}
 @media print{
   .topbar,.bot-nav,.ov,.drawer,.toast,.modal-ov,#support-fab,#support-prompt{display:none!important;}
   .secs-wrap{padding:0;}
@@ -745,7 +794,7 @@ table.dt select{width:100%;padding:5px 4px;border:1px solid var(--border);border
     <div class="auth-footer">
       <div class="auth-footer-built">Built by <strong>HazzinBR</strong> &nbsp;·&nbsp; <span style="opacity:.45">Community Health Survey v2.0</span></div>
       <div class="auth-footer-tagline">Free · Offline-first · Great Lakes University · Nyamache Sub County Hospital</div>
-      <a class="auth-footer-donate" onclick="showDonateModal()" style="text-decoration:none">💚 Support via M-Pesa</a>
+      <a class="auth-footer-donate" onclick="showDonateModal()" style="text-decoration:none">☕ Buy me a coffee</a>
     </div>
   </div>
 
@@ -773,11 +822,32 @@ table.dt select{width:100%;padding:5px 4px;border:1px solid var(--border);border
     <div class="ls-footer">
       <div class="ls-built">Built by <strong>HazzinBR</strong> &nbsp;·&nbsp; <span style="opacity:.45">Community Health Survey v2.0</span></div>
       <div class="ls-tagline">Free · Offline-first · Great Lakes University · Nyamache Sub County Hospital</div>
-      <a class="ls-donate" onclick="showDonateModal()" style="text-decoration:none">💚 Support via M-Pesa</a>
+      <a class="ls-donate" onclick="showDonateModal()" style="text-decoration:none">☕ Buy me a coffee</a>
     </div>
   </div>
 
 </div>
+
+<!-- Floating Support FAB -->
+<button id="support-fab" onclick="showDonateModal()" title="Buy me a coffee ☕" style="
+  position:fixed;bottom:calc(82px + env(safe-area-inset-bottom));right:16px;
+  z-index:140;width:46px;height:46px;border-radius:50%;
+  background:linear-gradient(135deg,#1a5c35,#1a4060);
+  border:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 4px 18px rgba(0,0,0,.25),0 0 0 0 rgba(61,184,106,.4);
+  animation:fabPulse 3s ease infinite;
+  font-size:20px;
+  transition:transform .15s;
+">💚</button>
+<style>
+@keyframes fabPulse{
+  0%,100%{box-shadow:0 4px 18px rgba(0,0,0,.25),0 0 0 0 rgba(61,184,106,0);}
+  50%{box-shadow:0 4px 18px rgba(0,0,0,.25),0 0 0 8px rgba(61,184,106,.15);}
+}
+#support-fab:active{transform:scale(0.9);}
+</style>
+
 
 <div class="topbar">
   <div class="tb-left">
@@ -828,6 +898,71 @@ table.dt select{width:100%;padding:5px 4px;border:1px solid var(--border);border
       <button class="mbtn mbtn-p" onclick="exportJSON()" style="background:#4d5a27">💾 Save to Database<span style="font-size:0.72rem;opacity:.75;display:block;font-weight:400;margin-top:1px">Export raw data as JSON file</span></button>
       <button class="mbtn mbtn-s" onclick="closeFinish()">Later</button>
     </div>
+  </div>
+</div>
+
+
+<!-- In-page report overlay — uses iframe to preserve all report styles -->
+<div id="report-overlay">
+  <div id="report-toolbar">
+    <span id="report-title">Report</span>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;">
+      <button class="report-tb-btn report-tb-print" onclick="printReport()">🖨 Print / Save PDF</button>
+      <button class="report-tb-btn" onclick="closeReportOverlay()">✕ Close</button>
+    </div>
+  </div>
+  <!-- iframe preserves all fonts and CSS from the report HTML -->
+  <iframe id="report-frame"
+    style="width:100%;flex:1;border:none;display:block;"
+    title="Report"></iframe>
+  <!-- Post-report action buttons -->
+  <div id="report-actions" style="
+    padding:16px 16px calc(20px + env(safe-area-inset-bottom));
+    background:#f0f4f1;
+    border-top:1px solid #d4e6da;
+    display:flex;flex-direction:column;gap:10px;
+  ">
+    <div style="text-align:center;font-size:.78rem;color:#5c7a6a;font-weight:600;margin-bottom:2px;">What would you like to do next?</div>
+    <button onclick="startNewSurveyFromReport()" style="
+      width:100%;padding:15px;
+      background:linear-gradient(135deg,#1a5c35,#1a4060);
+      color:#fff;border:none;border-radius:14px;
+      font-family:inherit;font-size:.95rem;font-weight:800;
+      cursor:pointer;letter-spacing:.2px;
+      box-shadow:0 4px 16px rgba(26,92,53,.3);">
+      ＋ Start New Survey
+    </button>
+    <button onclick="goHomeFromReport()" style="
+      width:100%;padding:14px;
+      background:#fff;color:#1a5c35;
+      border:1.5px solid #d4e6da;border-radius:14px;
+      font-family:inherit;font-size:.9rem;font-weight:700;cursor:pointer;">
+      🏠 Go to Home
+    </button>
+  </div>
+</div>
+
+
+<!-- DONATE MODAL -->
+<div id="donateModal" style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.6);align-items:flex-end;justify-content:center;">
+  <div style="background:#fff;width:100%;max-width:480px;border-radius:24px 24px 0 0;padding:28px 22px calc(28px + env(safe-area-inset-bottom));box-shadow:0 -8px 40px rgba(0,0,0,.2);">
+    <div style="text-align:center;margin-bottom:22px">
+      <div style="font-size:48px;margin-bottom:10px">💚</div>
+      <div style="font-size:1.15rem;font-weight:800;color:#1a5c35;margin-bottom:6px;letter-spacing:-.02em">Can I get a coffee? ☕</div>
+      <div style="font-size:0.82rem;color:#6b8a74;line-height:1.6;max-width:300px;margin:0 auto">This little app works hard so you don't have to 😄 If it saved you even a minute, I wouldn't say no to a coffee! ☕</div>
+    </div>
+    <div style="background:linear-gradient(135deg,#e8f5ed,#edf4fb);border:1.5px solid #cce0d4;border-radius:16px;padding:18px;text-align:center;margin-bottom:16px">
+      <div style="font-size:0.65rem;font-weight:800;color:#6b8a74;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px">M-Pesa · Send Money</div>
+      <div style="font-size:2.2rem;font-weight:800;color:#1a5c35;letter-spacing:3px;font-variant-numeric:tabular-nums">0112973866</div>
+      <div style="font-size:0.75rem;color:#6b8a74;margin-top:5px">Even a sip is appreciated 😊 Karibu sana!</div>
+    </div>
+    <div style="background:#f7f8fa;border-radius:12px;padding:12px 14px;margin-bottom:18px;font-size:0.77rem;color:#1a2b22;line-height:1.7">
+      <strong>How to send:</strong> Open M-Pesa → Send Money → Enter <strong>0112973866</strong> → Any amount → Send
+    </div>
+    <div style="text-align:center;margin-bottom:14px;font-size:0.65rem;color:#aaa;letter-spacing:.3px">
+      © 2026 HazzinBR · Community Health Survey · Free to use
+    </div>
+    <button onclick="document.getElementById('donateModal').style.display='none'" style="width:100%;padding:14px;background:linear-gradient(135deg,#1a5c35,#1a4060);color:#fff;border:none;border-radius:14px;font-family:inherit;font-size:0.95rem;font-weight:700;cursor:pointer;box-shadow:0 4px 14px rgba(26,92,53,.2)">Close</button>
   </div>
 </div>
 
@@ -1997,27 +2132,46 @@ function showBlockedModal(title, body, btn){
 function goSec(i, dir){
   clearErr();
   const cards = document.querySelectorAll('.sec-card');
-  const prev = cards[cur];
-  // Determine slide direction: dir='forward'|'back', default by index
+  const prev  = cards[cur];
   const goingForward = dir ? dir==='forward' : i > cur;
   cur = i;
+  const next  = cards[i];
+  if(!next) return;
 
-  if(prev && prev.classList.contains('active')){
+  // ── Outgoing card: slide out horizontally ──
+  if(prev && prev !== next){
     prev.classList.remove('active');
     prev.classList.add(goingForward ? 'slide-out-left' : 'slide-out-right');
-    setTimeout(()=>prev.classList.remove('slide-out-left','slide-out-right'),240);
+    // Clean up after transition
+    setTimeout(()=>{
+      prev.classList.remove('slide-out-left','slide-out-right');
+    }, 340);
   }
 
-  const next = cards[i];
-  if(next){
-    next.classList.remove('active','slide-out-left','slide-out-right','slide-in-left','slide-in-right');
-    next.classList.add(goingForward ? 'active' : 'slide-in-left');
-    if(!goingForward) setTimeout(()=>next.classList.add('active'),10);
-  }
+  // ── Incoming card: start off-screen then slide in ──
+  // 1. Position it off screen instantly (no transition)
+  next.classList.remove('active','slide-out-left','slide-out-right','slide-in-left','slide-in-right');
+  next.classList.add(goingForward ? 'slide-in-right' : 'slide-in-left');
+
+  // 2. Force reflow so browser registers the off-screen position
+  void next.offsetWidth;
+
+  // 3. Add transition back and slide to active position
+  next.style.transition = 'transform .32s cubic-bezier(.4,0,.2,1), opacity .32s ease';
+  next.classList.remove('slide-in-right','slide-in-left');
+  next.classList.add('active');
+
+  // 4. Clean up inline transition after it completes
+  setTimeout(()=>{ next.style.transition=''; }, 340);
 
   updUI();
-  window.scrollTo({top:0,behavior:'smooth'});
-  setTimeout(runAllRules,100);
+  // Scroll the page to top so section header is visible — but only if needed
+  const wrap = document.getElementById('secsWrap');
+  if(wrap){
+    const top = wrap.getBoundingClientRect().top + window.scrollY - 4;
+    if(window.scrollY > top) window.scrollTo({top:top,behavior:'smooth'});
+  }
+  setTimeout(runAllRules, 100);
 }
 function nextSec(){
   if(!validate(cur))return;
@@ -2055,7 +2209,9 @@ function renDrw(){
     if(r.a_age && (r.a_age<18||r.a_age>85)) flags.push('⚠ Age');
     const syncBadge = r._synced
       ? `<span style="font-size:0.62rem;background:#e8f5ed;color:#1e5c38;padding:1px 6px;border-radius:99px;margin-left:4px;font-weight:700">✓ Uploaded</span>`
-      : `<span style="font-size:0.62rem;background:#fff8e1;color:#d35400;padding:1px 6px;border-radius:99px;margin-left:4px;font-weight:700">⏳ Not uploaded</span>`;
+      : r._finished
+        ? `<span style="font-size:0.62rem;background:#fff8e1;color:#d35400;padding:1px 6px;border-radius:99px;margin-left:4px;font-weight:700">⏳ Pending upload</span>`
+        : `<span style="font-size:0.62rem;background:#f0f0f0;color:#888;padding:1px 6px;border-radius:99px;margin-left:4px;font-weight:700">✎ In progress</span>`;
     return `<div class="rec-item ${id===recId?'act':''}" onclick="loadRec('${id}')">
       <div>
         <div class="rec-name">${nm} ${flags.map(f=>`<span style="font-size:0.65rem;background:#fdecea;color:#c00;padding:1px 6px;border-radius:99px;margin-left:4px">${f}</span>`).join('')}${syncBadge}</div>
@@ -2081,6 +2237,8 @@ function showToast(m,e=false){const t=document.getElementById('toast');t.textCon
 async function showFinish(){
   if(!validate(cur))return;
   saveCur();
+  // Mark this record as finished — only finished records are uploaded
+  if(recId && recs[recId]){ recs[recId]._finished=true; ss(); }
 
   const m=document.getElementById('finModal');
   m.querySelector('.modal-icon').textContent='⏳';
@@ -2183,14 +2341,49 @@ function openFullReport(){
   openReportWindow(html,'full');
 }
 function openReportWindow(html, type){
-  const w = window.open('','_blank','width=800,height=900');
-  if(!w){ showToast('Allow popups or use Print below',true); return; }
-  w.document.write(html);
-  w.document.close();
-  // Show support prompt after a short delay — after they've seen the report
-  setTimeout(()=>{
-    showSupportPrompt();
-  }, 3200);
+  const overlay = document.getElementById('report-overlay');
+  const frame   = document.getElementById('report-frame');
+  const titleEl = document.getElementById('report-title');
+  if(!overlay || !frame){ showToast('Report error — try again',true); return; }
+
+  // Write the FULL HTML document into iframe — all fonts, colours and layout preserved
+  const doc = frame.contentDocument || frame.contentWindow.document;
+  doc.open();
+  doc.write(html);
+  doc.close();
+
+  if(titleEl) titleEl.textContent = type==='brief' ? '📋 Brief Report' : '📄 Full Report';
+  overlay.classList.add('open');
+  setTimeout(showSupportPrompt, 4000);
+}
+
+function printReport(){
+  const frame = document.getElementById('report-frame');
+  if(frame && frame.contentWindow){
+    frame.contentWindow.focus();
+    frame.contentWindow.print();
+  } else {
+    window.print();
+  }
+}
+
+function closeReportOverlay(){
+  const overlay = document.getElementById('report-overlay');
+  if(overlay) overlay.classList.remove('open');
+}
+
+function startNewSurveyFromReport(){
+  closeReportOverlay();
+  // Start a brand new record and go to section 1
+  newRec();
+  showToast('✓ New survey started');
+}
+
+function goHomeFromReport(){
+  closeReportOverlay();
+  // Go back to section 1 (consent form) of current record
+  goSec(0, 'back');
+  showToast('Returned to home');
 }
 
 function showSupportPrompt(){
@@ -2213,11 +2406,11 @@ function showSupportPrompt(){
   el.innerHTML = `
     <div style="font-size:26px;flex-shrink:0">💚</div>
     <div style="flex:1;min-width:0">
-      <div style="color:#fff;font-size:0.8rem;font-weight:700;margin-bottom:2px">Enjoying this tool?</div>
-      <div style="color:rgba(255,255,255,.5);font-size:0.7rem;line-height:1.4">It's free — if it helped, consider supporting the developer via M-Pesa</div>
+      <div style="color:#fff;font-size:0.8rem;font-weight:700;margin-bottom:2px">Psst… can I get a coffee? ☕</div>
+      <div style="color:rgba(255,255,255,.5);font-size:0.7rem;line-height:1.4">This app is free and always will be — but a small M-Pesa treat keeps the code warm 😄</div>
     </div>
     <div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0">
-      <button onclick="document.getElementById('support-prompt').remove();showDonateModal()" style="padding:7px 13px;background:linear-gradient(135deg,#3db86a,#2a9054);color:#fff;border:none;border-radius:8px;font-family:inherit;font-size:0.74rem;font-weight:700;cursor:pointer;white-space:nowrap">Support 💚</button>
+      <button onclick="document.getElementById('support-prompt').remove();showDonateModal()" style="padding:7px 13px;background:linear-gradient(135deg,#3db86a,#2a9054);color:#fff;border:none;border-radius:8px;font-family:inherit;font-size:0.74rem;font-weight:700;cursor:pointer;white-space:nowrap">Buy me a coffee ☕</button>
       <button onclick="document.getElementById('support-prompt').remove()" style="padding:5px 13px;background:rgba(255,255,255,.08);color:rgba(255,255,255,.4);border:none;border-radius:8px;font-family:inherit;font-size:0.7rem;cursor:pointer">Maybe later</button>
     </div>`;
   document.body.appendChild(el);
@@ -2850,6 +3043,9 @@ function init(){
   if(keys.length){recId=keys[keys.length-1];loadInto(recs[recId]||{});}
   else{recId='R'+Date.now();recs[recId]={_c:new Date().toLocaleString(),_u:new Date().toLocaleString()};ss();}
   updUI();renDrw();
+  // Fill interviewer name now that the consent card DOM exists
+  const name=getUserName();
+  if(name) fillInterviewerFields(name);
   setTimeout(runAllRules,200);
 }
 document.addEventListener('DOMContentLoaded',init);
@@ -2989,6 +3185,15 @@ function applyWelcome(){
 // ══════════════════════════════════════════════════════
 //  AUTHENTICATION SYSTEM
 // ══════════════════════════════════════════════════════
+const AUTH_KEY       = 'chsa_auth';
+const STUDENTS_TABLE = 'chsa_students';
+const TEACHER_EMAIL  = 'hazzinbr001@gmail.com';
+// EmailJS config — free tier, 200 emails/month
+const EMAILJS_SERVICE  = 'service_748pr28';
+const EMAILJS_TEMPLATE = 'template_vebhc8t';
+const EMAILJS_PUBLIC   = 'uuUQcmG7gRRyZTqty';
+// Google OAuth Client ID — replace with yours from console.cloud.google.com
+const GOOGLE_CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com';
 
 function authGetSession(){ try{ return JSON.parse(localStorage.getItem(AUTH_KEY)||'null'); }catch{return null;} }
 function authSaveSession(s){ localStorage.setItem(AUTH_KEY, JSON.stringify(s)); }
@@ -3504,23 +3709,6 @@ async function authLogin(){
     authEnterApp();
   }catch(e){ authMsg('login','⚠ Connection error — try again'); }
 }
-
-// ══════════════════════════════════════════════════════
-//  AUTHENTICATION SYSTEM
-// ══════════════════════════════════════════════════════
-const AUTH_KEY       = 'chsa_auth';
-const STUDENTS_TABLE = 'chsa_students';
-const TEACHER_EMAIL  = 'hazzinbr001@gmail.com';
-// EmailJS config — free tier, 200 emails/month
-const EMAILJS_SERVICE  = 'service_748pr28';
-const EMAILJS_TEMPLATE = 'template_vebhc8t';
-const EMAILJS_PUBLIC   = 'uuUQcmG7gRRyZTqty';
-// Google OAuth Client ID — replace with yours from console.cloud.google.com
-const GOOGLE_CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com';
-
-function authGetSession(){ try{ return JSON.parse(localStorage.getItem(AUTH_KEY)||'null'); }catch{return null;} }
-function authSaveSession(s){ localStorage.setItem(AUTH_KEY, JSON.stringify(s)); }
-function authClearSession(){ localStorage.removeItem(AUTH_KEY); }
 
 // ── Email notification to teacher via EmailJS ──
 async function authNotifyTeacher(studentName, regNumber, email){
@@ -4075,7 +4263,7 @@ async function syncAll(){
   setSyncStatus('syncing');
   const stored = JSON.parse(localStorage.getItem('chsa4')||'{}');
   const pending = Object.entries(stored).filter(([id,r])=>
-    typeof r === 'object' && r !== null && !id.startsWith('_') && !r._synced
+    typeof r === 'object' && r !== null && !id.startsWith('_') && !r._synced && r._finished===true
   );
   if(!pending.length){
     setSyncStatus('ok');
